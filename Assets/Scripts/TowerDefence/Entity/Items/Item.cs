@@ -1,8 +1,7 @@
 using System;
-using TowerDefence.Calculation;
-using TowerDefence.Entity;
-using TowerDefence.Skills;
 using Incremental.Currency;
+using TowerDefence.Entity;
+using TowerDefence.Entity.Skills.Effects;
 
 namespace Towerdefence.Entity.Items
 {

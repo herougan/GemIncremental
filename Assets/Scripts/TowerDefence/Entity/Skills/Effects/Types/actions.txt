@@ -1,0 +1,11 @@
+*==* Reversible *==*
+
+Modify Stats
+Aura-related
+Deduct/Add Resources
+
+*==* Unreversible *==*
+
+Change intake/outtake of resources
+Move a unit
+Apply buff (buff's effects can expire.)

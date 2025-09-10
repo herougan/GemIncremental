@@ -1,27 +1,15 @@
-namespace TowerDefence.Game
+namespace TowerDefence.Context
 {
-	public class GameContext
-	{
+	public interface IContext {
 
-
-		// Float, ddouble
-		public void Resolve(string s)
-		{
-
-		}
 	}
 
-	public class GameContextBuilder
-	{
-		public GameContext Build()
-		{
-			return new GameContext();
-		}
+	public interface IGameContext : IContext {
 
-		public GameContextBuilder WithSomeSetting(string setting)
-		{
-			// Set some context settings
-			return this;
-		}
+	}
+
+	public class GameContext : IGameContext
+	{
+		
 	}
 }
