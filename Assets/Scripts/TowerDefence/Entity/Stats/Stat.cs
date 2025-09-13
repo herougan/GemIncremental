@@ -414,7 +414,6 @@ namespace TowerDefence.Stats
 
 		// Trackers
 		public List<IStat> Stats;
-		public List<StatType> StatTypes;
 
 		[Header("Basic Stats")]
 		public DepletableStat Health; // Health is NOT inherently regenerable
@@ -710,7 +709,6 @@ namespace TowerDefence.Stats
 				return;
 			}
 			Stats.Add(stat);
-			StatTypes.Add(stat.StatType);
 			StatMap[stat.StatType] = stat;
 		}
 
@@ -726,8 +724,20 @@ namespace TowerDefence.Stats
 
 		public void RemoveStat(IStat stat)
 		{
-			// TODO
-			stat
+			if (stat == null)
+			{
+				LogManager.Instance.LogError("Cannot remove null stat!");
+				return;
+			}
+			if (!Stats.Any(s => s.StatType == stat.StatType))
+			{
+				LogManager.Instance.LogWarning($"Stat {stat.StatType} does not exist in StatBlock!");
+				return;
+			}
+			Stats.Remove(stat);
+			StatMap.Remove(stat.StatType);
+
+			// TODO why so many ways to search? Since StatMap exists, no use for StatTypes
 		}
 
 		// Getters
@@ -747,20 +757,12 @@ namespace TowerDefence.Stats
 
 		List<IStat> GetAllStats()
 		{
-			List<IStat> allStats = new List<IStat>();
-			foreach (var field in GetType().GetFields())
-			{
-				if (field.FieldType == typeof(IStat))
-				{
-					allStats.Add((IStat)field.GetValue(this));
-				}
-			}
-			return allStats;
+			return Stats;
 		}
 
 		public IStat GetStat(StatType type)
 		{
-			return Stats.FirstOrDefault(stat => { return stat.StatType == type; });
+			return StatMap.ContainsKey(type) ? StatMap[type] : null;
 		}
 
 		public bool IfStatExists(StatType type)

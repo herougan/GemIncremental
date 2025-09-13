@@ -30,7 +30,6 @@ namespace TowerDefence.Entity
 
 
 		// ===== Game State =====
-		public List<IBuff> Buffs { get; }
 		List<IBuff> Buffs { get; }
 		List<StatusStat> Statuses { get; }
 		List<IAffect> Affects { get; }
@@ -53,7 +52,6 @@ namespace TowerDefence.Entity
 		#region Events
 
 		// ===== Event =====
-		void RegisterCallbacks();
 
 		// == Stat ==
 		// General
@@ -110,6 +108,8 @@ namespace TowerDefence.Entity
 		// Stat
 
 		// Skills
+		// Register Callbacks()
+		void RegisterCallbacks();
 		public void RegisterSkillTrigger(ISkill Skill);
 
 		#endregion Events
