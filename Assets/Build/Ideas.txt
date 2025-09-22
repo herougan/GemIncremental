@@ -1,0 +1,3 @@
+ISource is useful for creating a damage table (Damage% by tower), skill damage table (Damage% by skill in tower)
+How do I calculate contribution of a buff? (I can calculate multiplier contribution - is it accurate to pluck out a 1.7x in a multiplier chain?)
+(What if the scaling logic is non-linear. The bonus made a different bonus pass a gate)

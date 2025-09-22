@@ -217,5 +217,11 @@ namespace TowerDefence.Entity.Resources
 		FungiSpores,
 		FlowerPollen,
 		Capacitance,
+
+		//
+		Gold,
+		Wood,
+		Stone,
+		Food,
 	}
 }

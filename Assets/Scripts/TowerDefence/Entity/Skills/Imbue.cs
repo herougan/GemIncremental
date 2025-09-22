@@ -6,6 +6,9 @@ namespace TowerDefence.Entity.Skills
 
 	}
 
+	/// <summary>
+	///  These are modifiers applied outside Skills effects such as crossing an amplifying field or being bounced across mirrors
+	/// </summary>
 	public class Imbue : IImbue
 	{
 

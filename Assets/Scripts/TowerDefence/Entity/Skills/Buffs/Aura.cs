@@ -6,7 +6,7 @@ namespace TowerDefence.Entity.Skills.Buffs
 	{
 		// Define properties or methods that an Aura should have
 
-		SkillData Data { get; }
+		SkillPlan Data { get; }
 		float Range { get; }
 		bool IsAffectSelf { get; }
 		bool IsAffectOthers { get; }
@@ -28,9 +28,9 @@ namespace TowerDefence.Entity.Skills.Buffs
 
 		public bool IsInstance => throw new NotImplementedException();
 
-		SkillData Data { get; private set; }
+		SkillPlan Data { get; private set; }
 
-		SkillData IAura.Data => Data;
+		SkillPlan IAura.Data => Data;
 	}
 }
 

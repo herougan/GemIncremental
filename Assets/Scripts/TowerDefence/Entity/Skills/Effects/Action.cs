@@ -4,6 +4,7 @@ using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 using Util.Maths;
+using static TowerDefence.Entity.Skills.Effects.Action;
 
 namespace TowerDefence.Entity.Skills.Effects
 {
@@ -12,16 +13,25 @@ namespace TowerDefence.Entity.Skills.Effects
 		public ActionType ActionType { get; }
 		public List<IBoost> Boosts { get; }
 		public ddouble Value { get; }
+		public void Recalculate(ddouble scale);
+		public void ApplyAction(IEntity source, IEntity target);
 	}
 
 	public class Action : IAction
 	{
 		// Implementation of trigger logic
 		public ActionType ActionType => throw new System.NotImplementedException();
-
 		public List<IBoost> Boosts => throw new System.NotImplementedException();
-
 		public ddouble Value => throw new System.NotImplementedException();
+
+		public void Recalculate(ddouble scale)
+		{
+			throw new System.NotImplementedException();
+		}
+		public void ApplyAction(IEntity source, IEntity target)
+		{
+			throw new System.NotImplementedException();
+		}
 	}
 
 	public enum ActionType

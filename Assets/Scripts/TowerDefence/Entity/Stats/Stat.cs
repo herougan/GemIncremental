@@ -4,6 +4,7 @@ using System.Linq;
 using Debug;
 using TowerDefence.Entity.Skills;
 using TowerDefence.Entity.Skills.Keywords;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Serialization;
 using Util.Maths;
@@ -196,10 +197,12 @@ namespace TowerDefence.Stats
 		public float Rate { get; }
 		//
 		public event Action<IStat, ddouble> OnRegenerate;
+		public event Action<IStat, ddouble> OnRest;
 		public event Action<IStat, ddouble> OnRegenValueChanged;
 		public event Action<IStat, float> OnRegenRateChanged;
 		//
 		public void Regenerate();
+		public void Rest(); // Regenerates faster, and greater; at least 1 point if 0
 		public void Tick(float time);
 		public void SetRate(float value);
 		public void SetRegeneration(ddouble value);
@@ -237,6 +240,7 @@ namespace TowerDefence.Stats
 		[SerializeField] protected float _Rate;
 
 		public event Action<IStat, ddouble> OnRegenerate = delegate { };
+		public event Action<IStat, ddouble> OnRest = delegate { };
 		public event Action<IStat, ddouble> OnRegenValueChanged = delegate { };
 		public event Action<IStat, float> OnRegenRateChanged = delegate { };
 
@@ -274,6 +278,18 @@ namespace TowerDefence.Stats
 			if (regen > 0)
 			{
 				OnRegenerate?.Invoke(this, regen);
+				// Regenerate, Capped at Max health
+				Current += regen;
+			}
+		}
+
+		public void Rest()
+		{
+			// Invoke Event
+			ddouble regen = Math.Min(2 * Regeneration, Math.Max(0, Value - Current));
+			if (regen > 0)
+			{
+				OnRest?.Invoke(this, regen);
 				// Regenerate, Capped at Max health
 				Current += regen;
 			}
@@ -410,10 +426,8 @@ namespace TowerDefence.Stats
 
 		// Dict
 		public Dictionary<StatType, IStat> StatMap { get; protected set; } = new Dictionary<StatType, IStat>();
-
-
-		// Trackers
-		public List<IStat> Stats;
+		public Dictionary<ElementType, ElementStat> ElementMap { get; protected set; } = new Dictionary<ElementType, ElementStat>();
+		public Dictionary<StatusType, StatusStat> StatusMap { get; protected set; } = new Dictionary<StatusType, StatusStat>();
 
 		[Header("Basic Stats")]
 		public DepletableStat Health; // Health is NOT inherently regenerable
@@ -534,12 +548,13 @@ namespace TowerDefence.Stats
 		public event Action<IStat, IStatMod> OnStatNerfAdded = delegate { };
 		// Regenerable
 		public event Action<IStat, ddouble> OnRegenerate = delegate { };
+		public event Action<IStat, ddouble> OnRest = delegate { };
 		public event Action<IStat, ddouble> OnRegenValueChanged = delegate { };
 		public event Action<IStat, ddouble> OnRegenRateChanged = delegate { };
 
 		public void RegisterCallbacks()
 		{
-			foreach (var stat in Stats)
+			foreach (var stat in StatMap.Values)
 			{
 				stat.OnValueChanged += (s, v) =>
 				{
@@ -554,6 +569,7 @@ namespace TowerDefence.Stats
 				if (stat is IRegenerable regenerable)
 				{
 					regenerable.OnRegenerate += (s, v) => OnRegenerate?.Invoke(s, v);
+					regenerable.OnRest += (s, v) => OnRest?.Invoke(s, v);
 					regenerable.OnRegenValueChanged += (s, v) => OnRegenValueChanged?.Invoke(s, v);
 					regenerable.OnCurrentValueDecreased += (s, v) => OnCurrentValueDecreased?.Invoke(s, v);
 					regenerable.OnCurrentValueIncreased += (s, v) => OnCurrentValueIncreased?.Invoke(s, v);
@@ -644,13 +660,85 @@ namespace TowerDefence.Stats
 			Ice = new ElementStat(ElementType.Ice);
 			Toxic = new ElementStat(ElementType.Toxic);
 
-			Stats = GetAllStats();
 			RegisterCallbacks();
+		}
+
+		// Reflection-based Initializer // TODO check
+		// public void InitialiseStats()
+		// {
+		// 	var fields = GetType().GetFields();
+		// 	foreach (var field in fields)
+		// 	{
+		// 		if (field.GetValue(this) != null)
+		// 			continue;
+
+		// 		if (field.FieldType == typeof(DepletableStat))
+		// 		{
+		// 			var statType = (StatType)Enum.Parse(typeof(StatType), field.Name, true);
+		// 			field.SetValue(this, new DepletableStat(statType));
+		// 		}
+		// 		else if (field.FieldType == typeof(RegenerableStat))
+		// 		{
+		// 			var statType = (StatType)Enum.Parse(typeof(StatType), field.Name, true);
+		// 			field.SetValue(this, new RegenerableStat(statType));
+		// 		}
+		// 		else if (field.FieldType == typeof(ImmutableStat))
+		// 		{
+		// 			var statType = (StatType)Enum.Parse(typeof(StatType), field.Name, true);
+		// 			field.SetValue(this, new ImmutableStat(statType));
+		// 		}
+		// 		else if (field.FieldType == typeof(Stat))
+		// 		{
+		// 			var statType = (StatType)Enum.Parse(typeof(StatType), field.Name, true);
+		// 			field.SetValue(this, new Stat(statType));
+		// 		}
+		// 		else if (field.FieldType == typeof(StatusStat))
+		// 		{
+		// 			var statusType = (StatusType)Enum.Parse(typeof(StatusType), field.Name, true);
+		// 			field.SetValue(this, new StatusStat(statusType));
+		// 		}
+		// 		else if (field.FieldType == typeof(ElementStat))
+		// 		{
+		// 			var elementType = (ElementType)Enum.Parse(typeof(ElementType), field.Name, true);
+		// 			field.SetValue(this, Activator.CreateInstance(typeof(ElementStat), elementType));
+		// 		}
+		// 	}
+		// 	RegisterCallbacks();
+		// }
+
+		public void InitialiseNewStat(StatType type)
+		{
+			if (StatMap.ContainsKey(type))
+			{
+				LogManager.Instance.LogWarning($"Stat {type} already exists in StatBlock!");
+				return;
+			}
+			StatMap[type] = new Stat(type);
+		}
+
+		public void InitialiseNewElement(ElementType type)
+		{
+			if (ElementMap.ContainsKey(type))
+			{
+				LogManager.Instance.LogWarning($"Element {type} already exists in StatBlock!");
+				return;
+			}
+			ElementMap[type] = new ElementStat(type);
+		}
+
+		public void InitialiseNewStatus(StatusType type)
+		{
+			if (StatusMap.ContainsKey(type))
+			{
+				LogManager.Instance.LogWarning($"Status {type} already exists in StatBlock!");
+				return;
+			}
+			StatusMap[type] = new StatusStat(type);
 		}
 
 		#endregion Constructor
 
-		#region Logic
+		#region Lifecycle
 
 		public void Regenerate()
 		{
@@ -660,7 +748,7 @@ namespace TowerDefence.Stats
 			}
 		}
 
-		#endregion Logic
+		#endregion Lifecycle
 
 		#region Methods
 
@@ -702,13 +790,12 @@ namespace TowerDefence.Stats
 				LogManager.Instance.LogError("Cannot add null stat!");
 				return;
 			}
-			if (Stats.Any(s => s.StatType == stat.StatType))
+			if (StatMap.ContainsKey(stat.StatType))
 			{
 				LogManager.Instance.LogWarning($"Stat {stat.StatType} already exists in StatBlock!");
 				GetType().GetField(stat.StatType.ToString()).SetValue(this, stat);
 				return;
 			}
-			Stats.Add(stat);
 			StatMap[stat.StatType] = stat;
 		}
 
@@ -720,6 +807,7 @@ namespace TowerDefence.Stats
 				OnStatBonusAdded?.Invoke(stat, mod);
 			if (!mod.IsPositive)
 				OnStatNerfAdded?.Invoke(stat, mod);
+			LogManager.Instance.Log($"Modified stat {type} by {mod.Value} ({mod.Operation}) to {stat.Value}");
 		}
 
 		public void RemoveStat(IStat stat)
@@ -729,15 +817,12 @@ namespace TowerDefence.Stats
 				LogManager.Instance.LogError("Cannot remove null stat!");
 				return;
 			}
-			if (!Stats.Any(s => s.StatType == stat.StatType))
+			if (!StatMap.ContainsKey(stat.StatType))
 			{
 				LogManager.Instance.LogWarning($"Stat {stat.StatType} does not exist in StatBlock!");
 				return;
 			}
-			Stats.Remove(stat);
 			StatMap.Remove(stat.StatType);
-
-			// TODO why so many ways to search? Since StatMap exists, no use for StatTypes
 		}
 
 		// Getters
@@ -755,11 +840,6 @@ namespace TowerDefence.Stats
 			return Regenerables;
 		}
 
-		List<IStat> GetAllStats()
-		{
-			return Stats;
-		}
-
 		public IStat GetStat(StatType type)
 		{
 			return StatMap.ContainsKey(type) ? StatMap[type] : null;
@@ -767,12 +847,12 @@ namespace TowerDefence.Stats
 
 		public bool IfStatExists(StatType type)
 		{
-			return Stats.Any(stat => stat.StatType == type);
+			return StatMap.ContainsKey(type);
 		}
 
 		public List<IStat> GetStats()
 		{
-			return Stats;
+			return StatMap.Values.ToList();
 		}
 
 		public List<IElement> GetElementStats()

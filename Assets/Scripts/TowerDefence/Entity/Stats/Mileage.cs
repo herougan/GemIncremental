@@ -59,6 +59,10 @@ namespace TowerDefence.Stats
 		DistanceToTarget, // Distance to the current target
 		TargetsKilled, // Number of targets killed
 		SkillsUsed, // Number of skills used
+		Lifetime, // Lifetime of the entity
+		DamageTaken, // Total damage taken
+		DamageDealt, // Total damage dealt
+		HealingReceived, // Total healing received
 	}
 
 	#region Blocks
@@ -88,7 +92,7 @@ namespace TowerDefence.Stats
 			}
 		}
 
-		public ddouble GetMileage(MileageType type)
+		public ddouble Get(MileageType type)
 		{
 			return MileageStats.ContainsKey(type) ? MileageStats[type].Value : 0;
 		}
@@ -102,6 +106,19 @@ namespace TowerDefence.Stats
 			else
 			{
 				throw new ArgumentException($"Mileage type {type} does not exist.");
+			}
+		}
+
+		public void Tick(float t)
+		{
+			MileageStats[MileageType.Lifetime].Add(t);
+		}
+
+		public void Reset()
+		{
+			foreach (var mileage in MileageStats.Values)
+			{
+				mileage.Reset();
 			}
 		}
 	}

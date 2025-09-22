@@ -1,5 +1,6 @@
-using Towerdefence.Entity.Items;
-using TowerDefence.Entity;
+using TowerDefence.Entity.Items;
+using TowerDefence.Entity.Resources;
+using TowerDefence.Entity.Skills.Buffs;
 using TowerDefence.Stats;
 using Util.Maths;
 
@@ -43,6 +44,7 @@ namespace TowerDefence.Entity.Skills
 		public ddouble Value { get; private set; }
 		public MathOperation Comparative { get; private set; }
 		public override ConditionType ConditionType => ConditionType.Stat;
+		public bool CheckCurrent { get; private set; } = false; // Whether to check current value or max value (IDepletables)
 
 		public StatCondition(StatType statType, double value, MathOperation comparative) : base(ConditionType.Stat)
 		{
@@ -186,20 +188,9 @@ namespace TowerDefence.Entity.Skills
 		}
 	}
 
+	#endregion Conditions
 
-	public enum KinematicsType
-	{
-		Speed,
-		Acceleration,
-		Deceleration,
-	}
-	public enum ResourceType
-	{
-		Gold,
-		Wood,
-		Stone,
-		Food,
-	}
+	#region Enums
 	public enum CounterType
 	{
 
@@ -217,5 +208,5 @@ namespace TowerDefence.Entity.Skills
 
 	}
 
-	#endregion Conditions
+	#endregion Enums
 }

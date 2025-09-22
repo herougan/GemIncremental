@@ -11,8 +11,8 @@ using Util.Serialisation;
 
 namespace TowerDefence.Entity.Tower
 {
-	[CreateAssetMenu(fileName = "TowerData", menuName = "TowerDefence/Entity/Tower")]
-	public class TowerData : ScriptableObject, IEntityData
+	[CreateAssetMenu(fileName = "TowerPlan", menuName = "TowerDefence/Entity/Tower")]
+	public class TowerPlan : ScriptableObject, IEntityPlan
 	{
 		#region Basic
 
@@ -39,11 +39,11 @@ namespace TowerDefence.Entity.Tower
 			set { _Name = value; }
 		}
 
-		GUID IEntityData.Guid => throw new NotImplementedException();
+		GUID EntityPlan.Guid => throw new NotImplementedException();
 
-		StatBlock IEntityData.StatBlock => throw new NotImplementedException();
+		StatBlock EntityPlan.StatBlock => throw new NotImplementedException();
 
-		ResourceBlock IEntityData.ResourceBlock => throw new NotImplementedException();
+		ResourceBlock EntityPlan.ResourceBlock => throw new NotImplementedException();
 
 		[FormerlySerializedAs("Name")][SerializeField] private string _Name;
 
@@ -96,14 +96,14 @@ namespace TowerDefence.Entity.Tower
 
 		#region Lineage
 
-		public TowerData NextRank;
-		public TowerData PreviousRank;
+		public TowerPlan NextRank;
+		public TowerPlan PreviousRank;
 
 		#endregion Lineage
 
 		#region Ingredients
 
-		public List<TowerData> ingredients = new List<TowerData>();
+		public List<TowerPlan> ingredients = new List<TowerPlan>();
 		public bool oneShot = false;
 		public bool combinable = false;
 
@@ -118,9 +118,9 @@ namespace TowerDefence.Entity.Tower
 		#endregion Summative stats
 
 		#region Util
-		public static TowerData RankUp(TowerData plan, int rank)
+		public static TowerPlan RankUp(TowerPlan plan, int rank)
 		{
-			TowerData _new = (TowerData)plan.MemberwiseClone();
+			TowerPlan _new = (TowerPlan)plan.MemberwiseClone();
 			_new.rank += rank;
 			return _new;
 		}
@@ -148,14 +148,14 @@ namespace TowerDefence.Entity.Tower
 		#endregion Util
 	}
 
-	[CustomEditor(typeof(TowerData))]
+	[CustomEditor(typeof(TowerPlan))]
 	public class TowerDataEditor : Editor
 	{
 		public override void OnInspectorGUI()
 		{
 			DrawDefaultInspector();
 
-			TowerData script = (TowerData)target;
+			TowerPlan script = (TowerPlan)target;
 			if (GUILayout.Button("Generate new GUID"))
 			{
 				script.Guid = new SerialisableGuid(Guid.NewGuid());

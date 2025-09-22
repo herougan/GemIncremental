@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Util.Maths;
 
 namespace TowerDefence.Entity.Skills.Effects
 {
@@ -12,6 +13,11 @@ namespace TowerDefence.Entity.Skills.Effects
 		public List<ICondition> TargetConditions { get; }
 		// Do
 		public List<IAction> Actions { get; }
+
+
+		// Methods
+		public void Recalculate(ddouble scale);
+		public void ApplyAction(IEntity source, IEntity target);
 	}
 
 	/// <summary>
@@ -24,6 +30,7 @@ namespace TowerDefence.Entity.Skills.Effects
 	[Serializable]
 	public class Effect : IEffect
 	{
+		#region Preamble
 		public List<ITrigger> Triggers { get; private set; }
 		//
 		public List<ICondition> Conditions { get; private set; }
@@ -34,16 +41,16 @@ namespace TowerDefence.Entity.Skills.Effects
 		public override string ToString()
 		{
 			string effectString = "";
-			
+
 			// Build triggers
-			if (Triggers.Count > 0)  effectString = "Upon ";
+			if (Triggers.Count > 0) effectString = "Upon ";
 			foreach (var trigger in Triggers)
 			{
 				effectString += trigger + ", ";
 			}
 
 			// Build conditions
-			if (Conditions.Count + TargetConditions.Count > 0)  effectString += "if ";
+			if (Conditions.Count + TargetConditions.Count > 0) effectString += "if ";
 			foreach (var condition in Conditions)
 			{
 				effectString += condition + ", ";
@@ -64,5 +71,27 @@ namespace TowerDefence.Entity.Skills.Effects
 			}
 			return effectString;
 		}
+		#endregion Preamble
+
+		#region Method
+
+		public void Recalculate(ddouble scale)
+		{
+			foreach (IAction action in Actions)
+			{
+				action.Recalculate(scale);
+			}
+		}
+
+		public void ApplyAction(IEntity source, IEntity target)
+		{
+			foreach (IAction action in Actions)
+			{
+				action.ApplyAction(source, target);
+			}
+		}
+
+		#endregion Method
+
 	}
 }

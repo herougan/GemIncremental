@@ -2,8 +2,9 @@ using System;
 using Incremental.Currency;
 using TowerDefence.Entity;
 using TowerDefence.Entity.Skills.Effects;
+using TowerDefence.Library;
 
-namespace Towerdefence.Entity.Items
+namespace TowerDefence.Entity.Items
 {
 	public interface IItem
 	{
@@ -47,7 +48,7 @@ namespace Towerdefence.Entity.Items
 
 	public class Consumable : Item
 	{
-		public Effect Effect { get; private set; }
+		public IEffect Effect { get; private set; }
 		private bool Used { get; set; } = false;
 
 		public Consumable(string name, string description = "", Currency cost = default(Currency), ItemType itemType = ItemType.DefaultBerry)

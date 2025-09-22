@@ -1,13 +1,14 @@
 using System;
+using TowerDefence.Entity.Skills.Buffs;
 using TowerDefence.Stats;
 using UnityEngine;
 using UnityEngine.Serialization;
 using Util.Maths;
 
-namespace TowerDefence.Entity.Skills
+namespace TowerDefence.Entity.Skills.Buffs
 {
 	// ===== Stat =====
-	public interface IStatus : IStat
+	public interface IResistance : IStat
 	{
 		public StatusType Status { get; }
 		public ddouble Resist { get; set; }
@@ -18,7 +19,7 @@ namespace TowerDefence.Entity.Skills
 	}
 
 	[Serializable]
-	public class StatusStat : Stat, IStatus
+	public class Resistance : Stat, IResistance
 	{
 		// Cooky hack (see IStat)
 		[FormerlySerializedAs("Status")]
@@ -49,7 +50,7 @@ namespace TowerDefence.Entity.Skills
 			}
 		}
 
-		public StatusStat(StatusType status, ddouble value = default(ddouble), ddouble resist = default(ddouble), ddouble threshold = default(ddouble)) : base(StatType.Status, value)
+		public Resistance(StatusType status, ddouble value = default(ddouble), ddouble resist = default(ddouble), ddouble threshold = default(ddouble)) : base(StatType.Status, value)
 		{
 			Status = status;
 			Value = value;
@@ -91,22 +92,5 @@ namespace TowerDefence.Entity.Skills
 		{
 			Value = 0;
 		}
-	}
-
-	public enum StatusType
-	{
-		Stun,
-		Poison,
-		Freeze,
-		Slow,
-		Blind,
-		Knockback,
-		Burn,
-		Paralyse,
-		Confuse,
-		Silence,
-		Weak,
-		Charm,
-		Curse,
 	}
 }

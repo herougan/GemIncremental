@@ -1,3 +1,19 @@
+
+using System;
+using System.Collections.Generic;
+using TowerDefence.Context;
+using TowerDefence.Entity;
+using TowerDefence.Entity.Monster;
+using TowerDefence.Entity.Skills;
+using TowerDefence.Entity.Skills.Buffs;
+using TowerDefence.Entity.Skills.Effects;
+using TowerDefence.Entity.Skills.Effects.Types.Stat;
+using TowerDefence.Entity.Tower;
+using TowerDefence.Stats;
+using UnityEngine;
+using Util.Maths;
+using Random = UnityEngine.Random;
+
 namespace TowerDefence.Library
 {
 	/// <summary>
@@ -12,7 +28,7 @@ namespace TowerDefence.Library
 		{
 			{ ActionType.Stat, new StatEffectHandler() },
 		};
-		public static void ApplyEffect(Skills.Effect effect, IEntity source, IEntity target)
+		public static void ApplyEffect(IEffect effect, IEntity source, IEntity target)
 		{
 			// foreach (Skills.Action action in effect.Actions)
 			// {
@@ -75,24 +91,24 @@ namespace TowerDefence.Library
 			entity.AddBuff(buff); // TODO - should only be an attempt - trigger OnBuffApplied?
 
 			// Check if buff already exists
-			foreach (IBuff _buff in entity.Buffs)
+			foreach (IBuff _buff in entity.Buffs) // ????
 			{
 				// Stack Buff
-				if (_buff is StatBuff)
+				if (_buff.BuffType == BuffType.StatBuff)
 				{
-					if ((_buff as StatBuff).Type == (buff as StatBuff).Type)
-					{
-						StackBuff(ref entity, buff, _buff);
-						return;
-					}
+					StackBuff(ref entity, _buff, buff);
 				}
-				if (_buff is StatusBuff)
+				if (_buff.BuffType == BuffType.StatusBuff)
 				{
-					if ((_buff as StatusBuff).Type == (buff as StatusBuff).Type)
-					{
-						StackBuff(ref entity, buff, _buff);
-						return;
-					}
+					StackBuff(ref entity, _buff, buff);
+				}
+				if (_buff.BuffType == BuffType.Aura)
+				{
+					StackBuff(ref entity, _buff, buff);
+				}
+				if (_buff.BuffType == BuffType.Saga)
+				{
+					StackBuff(ref entity, _buff, buff);
 				}
 			}
 

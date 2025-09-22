@@ -1,10 +1,13 @@
 using System;
+using TowerDefence.Entity.Skills.Effects;
+using Util.Game;
 using Util.Maths;
 
 namespace TowerDefence.Entity.Skills.Buffs
 {
-	public interface IBuff : IExpirable, ISkill // giving IBuff these interfaces forces the abstract object to have effect when the data ALREADY has effect.
+	public interface IBuff : IExpirable // giving IBuff these interfaces forces the abstract object to have effect when the data ALREADY has effect.
 	{
+
 		// Functions
 		bool EqualType(IBuff buff);
 		void ApplyOtherEffects(); // Apply any other effects that are not part of the main effect
@@ -13,9 +16,17 @@ namespace TowerDefence.Entity.Skills.Buffs
 		bool IsExpireOnTrigger { get; }
 
 		// Properties
+		int Rank { get; }
+		BuffType BuffType { get; }
 		BuffStackType BuffStackType { get; }
 		bool BuffStackCascade { get; } // Upon Skill stack, cascade stacking to the individual effects
-		BuffType BuffType { get; }
+
+		// Events
+		public event Action<IBuff, IBuff> OnBuffStack;
+
+		// Methods
+		public void Stack(IBuff buff);
+		public void Stack(float duration, int rank, float value, IBuff buff);
 	}
 
 	public enum BuffType
@@ -27,13 +38,14 @@ namespace TowerDefence.Entity.Skills.Buffs
 	}
 
 	[Serializable]
-	public class Buff : IBuff
+	public class Buff : Skill, IBuff
 	{
 		#region Preamble
 		// Rank Properties
 		public int Rank { get; private set; } // Rank of the buff, e.g. 1, 2, 3, etc.
 		public BuffType BuffType { get; private set; }
 		public BuffStackType BuffStackType { get; private set; }
+		public bool BuffStackCascade { get; private set; }
 
 		// Properties
 		public float Duration { get; private set; }
@@ -42,30 +54,19 @@ namespace TowerDefence.Entity.Skills.Buffs
 		public ddouble Dynamic { get; private set; }
 
 		// Meta		
-		public bool IsPositive { get; private set; }
-		public bool ForMonster { get; private set; }
-		public bool ForTower { get; private set; }
 		public bool IsReceipient { get; private set; }
 		public bool IsShare { get; set; }
 		public bool IsExpireOnTrigger { get; set; }
-		public ISource Source { get; private set; }
-		public IEntity Affected { get; private set; }
 
 
-		// Data
-		public BuffData Data { get; private set; }
+		// Plan
+		public new BuffPlan Plan { get; private set; }
 
-		public ddouble Scale => throw new NotImplementedException();
-
-
-		// Events
-		public event Action<IExpirable> OnExpired;
-		public event Action<ISource> OnApplied;
 
 		// Constructor
-		public Buff(BuffData data)
+		public Buff(BuffPlan plan) : base(null)
 		{
-			Data = data;
+			Plan = plan;
 		}
 
 		public bool EqualType(IBuff buff)
@@ -75,10 +76,18 @@ namespace TowerDefence.Entity.Skills.Buffs
 
 		#endregion Preamble
 
+		#region Events
+
+		// Events
+		public event Action<IExpirable> OnExpired;
+		public event Action<IBuff, IBuff> OnBuffStack;
+
+		#endregion Events
+
 		#region Methods
 		public void Expire()
 		{
-
+			// TODO
 		}
 
 		public void Init()
@@ -100,9 +109,9 @@ namespace TowerDefence.Entity.Skills.Buffs
 		{
 			Dynamic = scale * Value;
 			// Scale the buff's effects
-			foreach (Effect effect in Effects)
+			foreach (IEffect effect in Plan.Effects)
 			{
-				effect.Scale(scale);
+				effect.Recalculate(scale);
 			}
 		}
 
@@ -119,13 +128,13 @@ namespace TowerDefence.Entity.Skills.Buffs
 
 		public void Attach(IEntity source, IEntity target)
 		{
-			Source = source;
-			Affected = target;
+			// Source = source;
+			// Affected = target;
 		}
 
 		public void ApplyAction(IEntity source, IEntity target)
 		{
-			foreach (SkillEffect effect in Data.Effects)
+			foreach (IEffect effect in Plan.Effects)
 			{
 				if (EntityUtil.Check(source, effect.Conditions))
 				{
@@ -133,6 +142,20 @@ namespace TowerDefence.Entity.Skills.Buffs
 				}
 			}
 		}
+
+		public void Stack(float duration, int rank, float value, IBuff buff)
+		{
+			this.Duration = duration;
+			this.Rank = rank;
+			this.Value = value;
+			OnBuffStack?.Invoke(this, buff);
+		}
+
+		public void Stack(IBuff buff)
+		{
+			BuffStackType.StackValue(this, (Buff)buff);
+		}
+
 		#endregion Methods
 	}
 
@@ -150,19 +173,16 @@ namespace TowerDefence.Entity.Skills.Buffs
 			ValueOperation = valueOperation;
 		}
 
-		public static void StackValue(Buff A, Buff B)
+		public static void StackValue(IBuff A, IBuff B)
 		{
 			if (A == null || B == null)
 				return;
 			if (A.BuffType != B.BuffType)
 				return;
-			A.Duration = (float)MathsLib.Operate(A.Duration, B.Duration, A.BuffStackType.TimeOperation);
-			A.Rank = (int)MathsLib.Operate(A.Rank, B.Rank, A.BuffStackType.RankOperation);
-			// foreach (SkillEffect effect in A.Effects)
-			// {
-			// 	effect.Scale(B.Data.Scale);
-			// }
-			A.Value = (float)MathsLib.Operate(A.Duration, B.Duration, A.BuffStackType.ValueOperation);
+			float duration = (float)MathsLib.Operate(A.Duration, B.Duration, A.BuffStackType.TimeOperation);
+			int rank = (int)MathsLib.Operate(A.Rank, B.Rank, A.BuffStackType.RankOperation);
+			float value = (float)MathsLib.Operate(A.Duration, B.Duration, A.BuffStackType.ValueOperation);
+			A.Stack(duration, rank, value, B);
 		}
 	}
 }

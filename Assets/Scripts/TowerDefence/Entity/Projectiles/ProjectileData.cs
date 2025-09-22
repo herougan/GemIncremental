@@ -9,8 +9,8 @@ using TowerDefence.Entity.Skills;
 
 namespace TowerDefence.Entity.Projectile
 {
-	[CreateAssetMenu(fileName = "MonsterData", menuName = "TowerDefence/Entity/Projectile")]
-	public class MonsterData : ScriptableObject, IEntityData
+	[CreateAssetMenu(fileName = "MonsterPlan", menuName = "TowerDefence/Entity/Projectile")]
+	public class MonsterPlan : ScriptableObject, EntityPlan
 	{
 		#region Preamble
 
@@ -23,8 +23,8 @@ namespace TowerDefence.Entity.Projectile
 		public ResourceBlock ResourceBlock;
 
 		// Effect
-		public List<SkillData> Skills;
-		public List<BuffData> Buffs; // Not sure if should be its own class or not
+		public List<SkillPlan> Skills;
+		public List<BuffPlan> Buffs; // Not sure if should be its own class or not
 
 		// ===== Meta =====
 		public Projectile.Type Type;
@@ -55,11 +55,11 @@ namespace TowerDefence.Entity.Projectile
 
 		public GUID guid => throw new System.NotImplementedException();
 
-		StatBlock IEntityData.StatBlock => throw new System.NotImplementedException();
+		StatBlock EntityPlan.StatBlock => throw new System.NotImplementedException();
 
-		GUID IEntityData.Guid => throw new System.NotImplementedException();
+		GUID EntityPlan.Guid => throw new System.NotImplementedException();
 
-		ResourceBlock IEntityData.ResourceBlock => throw new System.NotImplementedException();
+		ResourceBlock EntityPlan.ResourceBlock => throw new System.NotImplementedException();
 
 		public void Deserialize()
 		{
@@ -84,14 +84,14 @@ namespace TowerDefence.Entity.Projectile
 		#endregion Util
 	}
 
-	[CustomEditor(typeof(MonsterData))]
+	[CustomEditor(typeof(MonsterPlan))]
 	public class MonsterDataEditor : Editor
 	{
 		public override void OnInspectorGUI()
 		{
 			DrawDefaultInspector();
 
-			MonsterData script = (MonsterData)target;
+			MonsterPlan script = (MonsterPlan)target;
 			if (GUILayout.Button("Generate new GUID"))
 			{
 				script.Guid = new SerialisableGuid(System.Guid.NewGuid());
