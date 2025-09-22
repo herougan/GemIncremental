@@ -8,6 +8,7 @@ using static TowerDefence.Entity.Skills.Effects.Action;
 
 namespace TowerDefence.Entity.Skills.Effects
 {
+	// ===== Action =====
 	public interface IAction
 	{
 		public ActionType ActionType { get; }
@@ -28,6 +29,33 @@ namespace TowerDefence.Entity.Skills.Effects
 		{
 			throw new System.NotImplementedException();
 		}
+		public void ApplyAction(IEntity source, IEntity target)
+		{
+			throw new System.NotImplementedException();
+		}
+	}
+
+	// ===== Action Data =====
+	public interface IActionData
+	{
+		public ActionType ActionType { get; set; }
+		public List<IBoost> Boosts { get; set; }
+		public ddouble Value { get; set; }
+		public void Recalculate(ddouble scale);
+		public void ApplyAction(IEntity source, IEntity target);
+	}
+
+	public class ActionData : IActionData
+	{
+		public ActionType ActionType { get; set; }
+		public List<IBoost> Boosts { get; set; } = new List<IBoost>();
+		public ddouble Value { get; set; }
+
+		public void Recalculate(ddouble scale)
+		{
+			Value *= scale;
+		}
+
 		public void ApplyAction(IEntity source, IEntity target)
 		{
 			throw new System.NotImplementedException();

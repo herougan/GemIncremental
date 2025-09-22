@@ -34,6 +34,7 @@ namespace TowerDefence.Entity.Skills
 		Behaviour,
 		Tag,
 		Meta,
+		Race,
 	}
 
 
@@ -51,6 +52,19 @@ namespace TowerDefence.Entity.Skills
 			StatType = statType;
 			Value = value;
 			Comparative = comparative;
+		}
+	}
+
+	public class RaceCondition : Condition
+	{
+		public RaceCondition(Monster.Monster.Type type) : base(ConditionType.Race)
+		{
+
+		}
+
+		public RaceCondition(Tower.Tower.Type type) : base(ConditionType.Race)
+		{
+
 		}
 	}
 

@@ -1,19 +1,22 @@
+using System;
+using TowerDefence.Library;
+using Util.Maths;
+
 namespace TowerDefence.Entity.Skills.Buffs
 {
 	public class StatusBuff : Buff
 	{
-		public ddouble Value { get; private set; }
 		public StatusType StatusType { get; private set; }
 
-		public StatusBuff(StatusType statusType, ddouble value = default(ddouble))
+		public StatusBuff(StatusType statusType, ddouble scale = default(ddouble)) : base(SkillsLib.StatusPlans[statusType], scale)
 		{
 			StatusType = statusType;
-			Value = value;
+			BuffStackType = SkillsLib.StatusStackTypes[statusType];
 		}
 
-		public Add(Resistance resist, ddouble value)
+		public void Add(Resistance resist, ddouble value)
 		{
-
+			throw new NotImplementedException();
 		}
 	}
 

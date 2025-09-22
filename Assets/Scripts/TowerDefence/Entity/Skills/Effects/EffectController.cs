@@ -1,15 +1,17 @@
 using System.Collections.Generic;
+using Debug;
+using TowerDefence.Context;
 using TowerDefence.Entity.Skills.Effects;
 
 namespace TowerDefence.Entity.Skills.ActionHandler
 {
 	public static class EffectController
 	{
-		public static Dictionary<ActionType, IActionHandler> EffectHandlers { get; }
+		public static Dictionary<ActionType, IActionHandler> ActionHandlers { get; }
 
 		public static IActionHandler GetEffectHandler(ActionType actionType)
 		{
-			if (EffectHandlers.TryGetValue(actionType, out var handler))
+			if (ActionHandlers.TryGetValue(actionType, out var handler))
 			{
 				return handler;
 			}
@@ -17,24 +19,24 @@ namespace TowerDefence.Entity.Skills.ActionHandler
 			return null;
 		}
 
-		public static ApplyAction(GameContext context, Effect effect)
+		public static void ApplyAction(GameContext context, TriggerContext trigger, Effect effect)
 		{
 			foreach (Action action in effect.Actions)
 			{
-				ApplyAction(context, action);
+				ApplyAction(context, trigger, action);
 			}
 		}
 
-		public static ApplyAction(GameContext context, Action action)
+		public static void ApplyAction(GameContext context, TriggerContext trigger, Action action)
 		{
-			EffectHandlers.TryGetValue(action.Type, out var handler);
+			ActionHandlers.TryGetValue(action.ActionType, out var handler);
 			if (handler != null)
 			{
-				handler.ApplyAction(context, action);
+				handler.ApplyAction(context, trigger, action);
 			}
 			else
 			{
-				Debug.LogWarning($"No IActionHandler found for ActionType: {action.Type}");
+				LogManager.Instance.LogWarning($"No IActionHandler found for ActionType: {action.ActionType}");
 			}
 		}
 	}

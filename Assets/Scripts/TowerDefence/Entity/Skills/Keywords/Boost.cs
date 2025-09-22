@@ -1,6 +1,7 @@
-using TowerDefence.Entity;
 using TowerDefence.Stats;
 using Util.Maths;
+using TowerDefence.Entity.Tower;
+using TowerDefence.Entity.Monster;
 
 namespace TowerDefence.Entity.Skills.Keywords
 {
@@ -48,25 +49,15 @@ namespace TowerDefence.Entity.Skills.Keywords
 		// public new BoostType BoostType { get; private set; } = BoostType.Bane;
 
 		// public new MathOperation Operator { get; private set; } = MathOperation.Multiply;
-		public BoostBane(ddouble value, Monster.Type monsterType) : base(BoostType.Bane, value, MathOperation.Multiply, new Condition(ConditionType.MonsterType, monsterType))
+		public BoostBane(ddouble value, Monster.Monster.Type monsterType) : base(BoostType.Bane, value, MathOperation.Multiply, new RaceCondition(monsterType))
 		{
-		}
-		public BoostBane(ddouble value, Tower.Type towerType) : base(BoostType.Bane, value, MathOperation.Multiply, new Condition(ConditionType.TowerType, towerType))
-		{
+			throw new System.NotImplementedException();
 		}
 
-
-		// public BoostBane(ddouble value, MonsterType monsterType) :
-		// {
-		// 	Value = value;
-		// 	Condition = new Condition(ConditionType.MonsterType, monsterType);
-		// }
-
-		// public BoostBane(ddouble value, TowerType towerType)
-		// {
-		// 	Value = value;
-		// 	Condition = new Condition(ConditionType.TowerType, towerType);
-		// }
+		public BoostBane(ddouble value, Tower.Tower.Type towerType) : base(BoostType.Bane, value, MathOperation.Multiply, new RaceCondition(towerType))
+		{
+			throw new System.NotImplementedException();
+		}
 	}
 
 	public class BiasedBoost : Boost

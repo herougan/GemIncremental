@@ -9,10 +9,12 @@
 // OnBuffExpire is internal as well - an external timerManager loops through their buffs and calls the Entity.BuffTimePassed(float time) method.
 // Entity's functions are [RAW]! They do not adjust the values they receive. Therefore, biz logic is above it
 
+using TowerDefence.Projectile;
+
 namespace TowerDefence.Entity.Skills.Effects.Types.Attack
 {
 	public class ProjectileAction : Action
 	{
-		public ProjectileData Plan { get; private set; }
+		public ProjectilePlan Plan { get; private set; }
 	}
 }

@@ -1,6 +1,4 @@
 using System;
-using TowerDefence.Entity;
-using TowerDefence.Skills;
 
 namespace TowerDefence.Entity.Skills.Buffs
 {

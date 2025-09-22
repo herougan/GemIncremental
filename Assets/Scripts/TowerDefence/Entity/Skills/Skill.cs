@@ -61,6 +61,12 @@ namespace TowerDefence.Entity.Skills
 		{
 			this.Plan = plan;
 		}
+
+		public Skill(SkillPlan plan, ddouble scale = default(ddouble))
+		{
+			this.Plan = plan;
+			this.Scale = scale;
+		}
 	}
 
 	// ===== Spirce and Affects =====

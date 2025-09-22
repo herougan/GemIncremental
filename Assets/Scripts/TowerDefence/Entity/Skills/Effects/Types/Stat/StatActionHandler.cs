@@ -3,7 +3,7 @@ using TowerDefence.Context;
 
 namespace TowerDefence.Entity.Skills.Effects.Types.Stat
 {
-	public class StatEffectHandler : IActionHandler
+	public class StatActionHandler : IActionHandler
 	{
 		public ActionType Type => ActionType.Stat;
 

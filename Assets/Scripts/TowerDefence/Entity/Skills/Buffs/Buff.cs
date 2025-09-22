@@ -42,29 +42,34 @@ namespace TowerDefence.Entity.Skills.Buffs
 	{
 		#region Preamble
 		// Rank Properties
-		public int Rank { get; private set; } // Rank of the buff, e.g. 1, 2, 3, etc.
-		public BuffType BuffType { get; private set; }
-		public BuffStackType BuffStackType { get; private set; }
-		public bool BuffStackCascade { get; private set; }
+		public int Rank { get; protected set; } // Rank of the buff, e.g. 1, 2, 3, etc.
+		public BuffType BuffType { get; protected set; }
+		public BuffStackType BuffStackType { get; protected set; }
+		public bool BuffStackCascade { get; protected set; }
 
 		// Properties
-		public float Duration { get; private set; }
-		public float Time { get; private set; }
-		public ddouble Value { get; private set; }
-		public ddouble Dynamic { get; private set; }
+		public float Duration { get; protected set; }
+		public float Time { get; protected set; }
+		public ddouble Value { get; protected set; }
+		public ddouble Dynamic { get; protected set; }
 
 		// Meta		
-		public bool IsReceipient { get; private set; }
+		public bool IsReceipient { get; protected set; }
 		public bool IsShare { get; set; }
 		public bool IsExpireOnTrigger { get; set; }
 
 
 		// Plan
-		public new BuffPlan Plan { get; private set; }
+		public new BuffPlan Plan { get; protected set; }
 
 
 		// Constructor
 		public Buff(BuffPlan plan) : base(null)
+		{
+			Plan = plan;
+		}
+
+		public Buff(BuffPlan plan, ddouble scale) : base(null, scale)
 		{
 			Plan = plan;
 		}

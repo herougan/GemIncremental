@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Debug;
 using TowerDefence.Entity.Skills;
+using TowerDefence.Entity.Skills.Buffs;
 using TowerDefence.Entity.Skills.Keywords;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -136,6 +137,7 @@ namespace TowerDefence.Stats
 	{
 		public ddouble Current { get; }
 		public void SetMax(ddouble value);
+		public void Deplete(ddouble value);
 		public event Action<IStat, ddouble> OnCurrentValueDecreased;
 		public event Action<IStat, ddouble> OnCurrentValueIncreased;
 	}
@@ -151,6 +153,16 @@ namespace TowerDefence.Stats
 		{
 			// if (Value != value) OnValueChanged?.Invoke(this, value);
 			Value = value;
+		}
+
+		/// <summary>
+		/// Depletes the current value by the specified <paramref name="value"/> parameter.
+		/// </summary>
+		/// <param name="value"></param>
+		public void Deplete(ddouble value)
+		{
+
+			Current = Math.Max(0, Current - value);
 		}
 
 		public ddouble Current
@@ -427,7 +439,7 @@ namespace TowerDefence.Stats
 		// Dict
 		public Dictionary<StatType, IStat> StatMap { get; protected set; } = new Dictionary<StatType, IStat>();
 		public Dictionary<ElementType, ElementStat> ElementMap { get; protected set; } = new Dictionary<ElementType, ElementStat>();
-		public Dictionary<StatusType, StatusStat> StatusMap { get; protected set; } = new Dictionary<StatusType, StatusStat>();
+		public Dictionary<StatusType, Resistance> StatusMap { get; protected set; } = new Dictionary<StatusType, Resistance>();
 
 		[Header("Basic Stats")]
 		public DepletableStat Health; // Health is NOT inherently regenerable
@@ -502,11 +514,7 @@ namespace TowerDefence.Stats
 
 		// Status (Resist & Apply)
 		[Header("Status")]
-		public StatusStat Stun;
-		public StatusStat Poison;
-		public StatusStat Freeze;
-		public StatusStat Slow;
-		public StatusStat Blind;
+		public List<Resistance> Resistances;
 
 
 		// Ele (Resist & Mastery)
@@ -535,6 +543,7 @@ namespace TowerDefence.Stats
 		RegenValue: Value to be added onto Current every regenerate
 		RegenRate: Rate at which stat regenerates
 		*/
+
 		// General
 		public event Action<IStat, ddouble> OnValueChanged = delegate { };
 		public event Action<IStat, ddouble> OnValueDecreased = delegate { };
@@ -551,6 +560,12 @@ namespace TowerDefence.Stats
 		public event Action<IStat, ddouble> OnRest = delegate { };
 		public event Action<IStat, ddouble> OnRegenValueChanged = delegate { };
 		public event Action<IStat, ddouble> OnRegenRateChanged = delegate { };
+
+		// Resist
+		public event Action<StatusType, ddouble> OnResistIncreased = delegate { };
+		// Element
+		// public event Action<ElementType, ddouble> OnElementExplosion = delegate { };
+		// public event Action<ElementType, ddouble> OnElementSynergy = delegate { };
 
 		public void RegisterCallbacks()
 		{
@@ -640,12 +655,6 @@ namespace TowerDefence.Stats
 			Reward = new Stat(StatType.Reward);
 			Cost = new Stat(StatType.Cost);
 			//
-			Stun = new StatusStat(StatusType.Stun);
-			Poison = new StatusStat(StatusType.Poison);
-			Freeze = new StatusStat(StatusType.Freeze);
-			Slow = new StatusStat(StatusType.Slow);
-			Blind = new StatusStat(StatusType.Blind);
-			//
 			Fire = new ElementStat(ElementType.Fire);
 			Water = new ElementStat(ElementType.Water);
 			Earth = new ElementStat(ElementType.Earth);
@@ -663,49 +672,7 @@ namespace TowerDefence.Stats
 			RegisterCallbacks();
 		}
 
-		// Reflection-based Initializer // TODO check
-		// public void InitialiseStats()
-		// {
-		// 	var fields = GetType().GetFields();
-		// 	foreach (var field in fields)
-		// 	{
-		// 		if (field.GetValue(this) != null)
-		// 			continue;
-
-		// 		if (field.FieldType == typeof(DepletableStat))
-		// 		{
-		// 			var statType = (StatType)Enum.Parse(typeof(StatType), field.Name, true);
-		// 			field.SetValue(this, new DepletableStat(statType));
-		// 		}
-		// 		else if (field.FieldType == typeof(RegenerableStat))
-		// 		{
-		// 			var statType = (StatType)Enum.Parse(typeof(StatType), field.Name, true);
-		// 			field.SetValue(this, new RegenerableStat(statType));
-		// 		}
-		// 		else if (field.FieldType == typeof(ImmutableStat))
-		// 		{
-		// 			var statType = (StatType)Enum.Parse(typeof(StatType), field.Name, true);
-		// 			field.SetValue(this, new ImmutableStat(statType));
-		// 		}
-		// 		else if (field.FieldType == typeof(Stat))
-		// 		{
-		// 			var statType = (StatType)Enum.Parse(typeof(StatType), field.Name, true);
-		// 			field.SetValue(this, new Stat(statType));
-		// 		}
-		// 		else if (field.FieldType == typeof(StatusStat))
-		// 		{
-		// 			var statusType = (StatusType)Enum.Parse(typeof(StatusType), field.Name, true);
-		// 			field.SetValue(this, new StatusStat(statusType));
-		// 		}
-		// 		else if (field.FieldType == typeof(ElementStat))
-		// 		{
-		// 			var elementType = (ElementType)Enum.Parse(typeof(ElementType), field.Name, true);
-		// 			field.SetValue(this, Activator.CreateInstance(typeof(ElementStat), elementType));
-		// 		}
-		// 	}
-		// 	RegisterCallbacks();
-		// }
-
+		// Initialisers
 		public void InitialiseNewStat(StatType type)
 		{
 			if (StatMap.ContainsKey(type))
@@ -733,7 +700,7 @@ namespace TowerDefence.Stats
 				LogManager.Instance.LogWarning($"Status {type} already exists in StatBlock!");
 				return;
 			}
-			StatusMap[type] = new StatusStat(type);
+			StatusMap[type] = new Resistance(type);
 		}
 
 		#endregion Constructor
@@ -823,6 +790,30 @@ namespace TowerDefence.Stats
 				return;
 			}
 			StatMap.Remove(stat.StatType);
+		}
+
+		public void AddResistance(StatusType statusType, ddouble value)
+		{
+			OnResistIncreased?.Invoke(statusType, value);
+			Resistances.Add(new Resistance(statusType, value));
+		}
+
+		public void AddResistance(Resistance resistance)
+		{
+			if (Resistances == null)
+				Resistances = new List<Resistance>();
+			var existing = Resistances.Find(r => r.Status == resistance.Status);
+
+			// Add resistance
+			if (existing != null)
+			{
+				existing.Value += resistance.Value;
+			}
+			// Create resistance
+			else
+			{
+				AddResistance(resistance.Status, resistance.Value);
+			}
 		}
 
 		// Getters

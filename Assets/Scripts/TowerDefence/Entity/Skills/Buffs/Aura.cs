@@ -15,6 +15,10 @@ namespace TowerDefence.Entity.Skills.Buffs
 
 	public class Aura : Buff, IAura
 	{
+		public Aura(BuffPlan plan) : base(plan)
+		{
+		}
+
 		// Implementation of aura logic
 
 		/// <summary>
@@ -28,7 +32,7 @@ namespace TowerDefence.Entity.Skills.Buffs
 
 		public bool IsInstance => throw new NotImplementedException();
 
-		SkillPlan Data { get; private set; }
+		SkillPlan Data { get; }
 
 		SkillPlan IAura.Data => Data;
 	}

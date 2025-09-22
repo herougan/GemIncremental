@@ -1,6 +1,7 @@
 
 using System;
 using System.Collections.Generic;
+using Debug;
 using TowerDefence.Context;
 using TowerDefence.Entity;
 using TowerDefence.Entity.Monster;
@@ -23,27 +24,72 @@ namespace TowerDefence.Library
 	/// </summary>
 	public static class SkillsLib
 	{
+		#region Data
+
+		public static Dictionary<StatusType, BuffPlan> StatusPlans = new Dictionary<StatusType, BuffPlan>()
+			{
+				{ StatusType.Stun, Resources.Load<BuffPlan>("Status/Stun") },
+				{ StatusType.Poison, Resources.Load<BuffPlan>("Status/Poison") },
+				{ StatusType.Freeze, Resources.Load<BuffPlan>("Status/Freeze") },
+				{ StatusType.Slow, Resources.Load<BuffPlan>("Status/Slow") },
+				{ StatusType.Blind, Resources.Load<BuffPlan>("Status/Blind") },
+				{ StatusType.Knockback, Resources.Load<BuffPlan>("Status/Knockback") },
+				{ StatusType.Burn, Resources.Load<BuffPlan>("Status/Burn") },
+				{ StatusType.Paralyse, Resources.Load<BuffPlan>("Status/Paralyse") },
+				{ StatusType.Confuse, Resources.Load<BuffPlan>("Status/Confuse") },
+				{ StatusType.Silence, Resources.Load<BuffPlan>("Status/Silence") },
+				{ StatusType.Weak, Resources.Load<BuffPlan>("Status/Weak") },
+				{ StatusType.Charm, Resources.Load<BuffPlan>("Status/Charm") },
+				{ StatusType.Curse, Resources.Load<BuffPlan>("Status/Curse") },
+			};
+
+		public static Dictionary<StatusType, BuffStackType> StatusStackTypes = new Dictionary<StatusType, BuffStackType>()
+			{
+				{ StatusType.Stun, DelibilitatingTypeStacking},
+				{ StatusType.Poison, PoisonTypeStacking},
+				{ StatusType.Freeze, FireTypeStacking },
+				{ StatusType.Slow, FireTypeStacking},
+				{ StatusType.Blind, DelibilitatingTypeStacking},
+				{ StatusType.Knockback, FireTypeStacking},
+				{ StatusType.Burn, FireTypeStacking},
+				{ StatusType.Paralyse, DelibilitatingTypeStacking},
+				{ StatusType.Confuse, DelibilitatingTypeStacking},
+				{ StatusType.Silence, DelibilitatingTypeStacking},
+				{ StatusType.Weak, DelibilitatingTypeStacking},
+				{ StatusType.Charm, DelibilitatingTypeStacking},
+				{ StatusType.Curse, DelibilitatingTypeStacking},
+			};
+
+		// reference BuffStackTypes
+		private static BuffStackType FireTypeStacking = new BuffStackType(MathOperation.Max, MathOperation.Max, MathOperation.Add);
+		private static BuffStackType PoisonTypeStacking = new BuffStackType(MathOperation.Add, MathOperation.Max, MathOperation.Max);
+		private static BuffStackType DelibilitatingTypeStacking = new BuffStackType(MathOperation.Max, MathOperation.Max, MathOperation.Max);
+
+		#endregion Data
+
 		#region Apply Effect
-		public static readonly Dictionary<ActionType, IEffectHandler> EffectHandlers = new Dictionary<ActionType, IEffectHandler>()
+		public static readonly Dictionary<ActionType, IActionHandler> ActionHandlers = new Dictionary<ActionType, IActionHandler>()
+			{
+				{ ActionType.Stat, new StatActionHandler() },
+			};
+		public static void ApplyEffect(IEffect effect, IEntity source, TriggerContext triggerContext)
 		{
-			{ ActionType.Stat, new StatEffectHandler() },
-		};
-		public static void ApplyEffect(IEffect effect, IEntity source, IEntity target)
+			foreach (IAction action in effect.Actions)
+			{
+				ApplyEffect(action, source, triggerContext);
+			}
+		}
+
+		public static void ApplyEffect(IAction action, IEntity source, TriggerContext triggerContext)
 		{
-			// foreach (Skills.Action action in effect.Actions)
-			// {
-
-			// }
-
-
-			// if (EffectHandlers.TryGetValue(effect.Type, out IEffectHandler handler))
-			// {
-			// 	handler.ApplyEffect(new GameContext(source, target), effect);
-			// }
-			// else
-			// {
-			// 	Debug.LogWarning($"No effect handler found for action type: {effect.Type}");
-			// }
+			if (ActionHandlers.TryGetValue(action.ActionType, out IActionHandler handler))
+			{
+				// handler.ApplyAction(in GameManager.Instance.GameContext, in triggerContext, action);
+			}
+			else
+			{
+				LogManager.Instance.LogError($"No action handler found for action type: {action.ActionType}");
+			}
 		}
 
 		#endregion Apply Effect
@@ -88,76 +134,38 @@ namespace TowerDefence.Library
 
 		public static void ApplyBuff(IEntity entity, IBuff buff)
 		{
-			entity.AddBuff(buff); // TODO - should only be an attempt - trigger OnBuffApplied?
-
-			// Check if buff already exists
-			foreach (IBuff _buff in entity.Buffs) // ????
-			{
-				// Stack Buff
-				if (_buff.BuffType == BuffType.StatBuff)
-				{
-					StackBuff(ref entity, _buff, buff);
-				}
-				if (_buff.BuffType == BuffType.StatusBuff)
-				{
-					StackBuff(ref entity, _buff, buff);
-				}
-				if (_buff.BuffType == BuffType.Aura)
-				{
-					StackBuff(ref entity, _buff, buff);
-				}
-				if (_buff.BuffType == BuffType.Saga)
-				{
-					StackBuff(ref entity, _buff, buff);
-				}
-			}
-
-			// else, Apply Buff
-			if (buff is StatBuff)
-			{
-				entity.AddBuff(buff);
-				// 	switch (buff as StatBuff)
-				// 	{
-				// 		case StatType.Armour:
-				// 			entity.armourDefence *= (float)(buffValue[buff.type] * ScaleBuff(buff, buff.rank));
-				// 			return;
-				// 		case StatType.Type.Health:
-				// 			entity.health *= (float)(buffValue[buff.type] * ScaleBuff(buff, buff.rank));
-				// 			return;
-				// 		case StatType.Type.Mana:
-				// 			entity.mana *= (float)(buffValue[buff.type] * ScaleBuff(buff, buff.rank));
-				// 			return;
-				// 		case StatType.Type.Energy:
-				// 			entity.energy *= (float)(buffValue[buff.type] * ScaleBuff(buff, buff.rank));
-				// 			return;
-				// 	}
-				// }
-				// if (buff is StatusBuff)
-				// {
-				// 	switch (buff as StatusBuff)
-				// 	{
-				// 		case StatusBuff.Type.Blinded:
-				// 			entity.accuracy = 0;
-				// 			return;
-				// 	}
-				// }
-			}
+			entity.ApplyBuff(buff);
 		}
 
-		public static double ScaleBuff(IBuff buff, int rank)
+		public static void ApplyStatus(IEntity entity, StatusType statusType, ddouble value = default(ddouble))
 		{
-			if (buff is StatBuff)
-			{
-				if (StatBuffScale.ContainsKey((buff as StatBuff).Type) == false) return 1; // Default
-				return Math.Pow(StatBuffScale[(buff as StatBuff).Type], rank);
-			}
-			if (buff is StatusBuff)
-			{
-				if (StatusBuffScale.ContainsKey((buff as StatusBuff).Type) == false) return 1; // Default
-				return Math.Pow(StatusBuffScale[(buff as StatusBuff).Type], rank);
-			}
-			return 1; // Default
+			throw new NotImplementedException();
 		}
+
+		public static void RecalculateBuff(ref IEntity entity, IBuff buff)
+		{
+			throw new NotImplementedException();
+		}
+
+		public static void RecalculateStatus(ref IEntity entity, StatusType statusType)
+		{
+			throw new NotImplementedException();
+		}
+
+		// public static double ScaleBuff(IBuff buff, int rank)
+		// {
+		// 	if (buff is StatBuff)
+		// 	{
+		// 		if (StatBuffScale.ContainsKey((buff as StatBuff).Type) == false) return 1; // Default
+		// 		return Math.Pow(StatBuffScale[(buff as StatBuff).Type], rank);
+		// 	}
+		// 	if (buff is StatusBuff)
+		// 	{
+		// 		if (StatusBuffScale.ContainsKey((buff as StatusBuff).Type) == false) return 1; // Default
+		// 		return Math.Pow(StatusBuffScale[(buff as StatusBuff).Type], rank);
+		// 	}
+		// 	return 1; // Default
+		// }
 
 		public static void UnapplyBuff(ref Tower tower, IBuff buff)
 		{

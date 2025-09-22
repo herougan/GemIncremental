@@ -34,7 +34,6 @@ namespace TowerDefence.Entity
 
 		// ===== Game State =====
 		List<Tag> Tags { get; }
-		List<StatusBuff> Statuses { get; }
 		EntityBehaviourType Behaviour { get; }
 		// TokenInventory TokenInventory { get; } // Use tokens
 		MileageBlock MileageBlock { get; }
@@ -49,6 +48,7 @@ namespace TowerDefence.Entity
 		// Starting abilities
 		List<IBuff> Buffs { get; }
 		List<SkillPlan> Skills { get; } // Starting skills
+		List<StatusBuff> Statuses { get; }
 		List<IBuff> TowerAuras { get; } // Active, tracked during game, influences towers within range.
 		List<IBuff> MonsterAuras { get; } // Active, tracked during game, influences monsters within range.
 		List<IBuff> AuraInstances { get; } // Added/Removed when In/out Aura source range
@@ -152,15 +152,14 @@ namespace TowerDefence.Entity
 
 		#region Lifecycle
 		// ===== Lifecycle =====
+		public void Spawn();
 		public void Regenerate();
 		public void Rest();
 		public void Tick(float t);
 		public void Die();
+		public void Attack(); // move attack timer
+
 		#endregion Lifecycle
-
-		#region Combat
-
-		#endregion Combat
 
 		#region Methods
 
@@ -178,7 +177,7 @@ namespace TowerDefence.Entity
 		public void CleanseBuff(IBuff buff);
 		public void CleanseRandom();
 		public void ApplyDamage(ddouble damage);
-		public void Scale(List<StatType> types, List<double> values);
+		public void Recalculate(List<StatType> types, List<double> values);
 
 		// Entity Ability method
 		public void RegisterSkillTrigger(ISkill Skill);
@@ -225,10 +224,11 @@ namespace TowerDefence.Entity
 
 		// ===== Game State =====
 		public List<Tag> Tags { get; protected set; } // Can be gained and lost during a round
-		public List<Status> Statuses { get; protected set; } // List of active status effects
 		public EntityBehaviourType Behaviour { get; protected set; } // Current Behaviour State
 		public MileageBlock MileageBlock { get; protected set; }
 		public TokenInventory TokenInventory { get; }
+		public Kinematics Kinematics { get; }
+		public CountdownTimer AttackTimer { get; protected set; }
 
 		#endregion State
 
@@ -238,6 +238,7 @@ namespace TowerDefence.Entity
 		// Abilities
 		public List<IBuff> Buffs { get; protected set; } // Active, tracked during game
 		public List<SkillPlan> Skills { get; protected set; }// Starting skills
+		public List<StatusBuff> Statuses { get; protected set; } // List of active status effects
 		public List<IBuff> TowerAuras { get; protected set; }// Active, tracked during game, influences towers within range.
 		public List<IBuff> MonsterAuras { get; protected set; }// Active, tracked during game, influences monsters within range.
 		public List<IBuff> AuraInstances { get; protected set; }// Added/Removed when In/out Aura source range
@@ -493,11 +494,8 @@ namespace TowerDefence.Entity
 			// GameManager.Instance.EntityDied(this);
 		}
 
+		public void Attack() { }
 		#endregion Lifecycle
-
-		#region Combat
-
-		#endregion Combat
 
 		#region Methods
 
@@ -558,7 +556,6 @@ namespace TowerDefence.Entity
 
 		public void CleanseBuff(IBuff buff)
 		{
-			// TODO might have to compare strings instead
 			if (Buffs.Any(b => b.BuffType == buff.BuffType))
 			{
 				// Remove
@@ -585,22 +582,20 @@ namespace TowerDefence.Entity
 
 		public void ApplyDamage(Damage damage)
 		{
-			throw new NotImplementedException();
+			StatBlock.Health.Deplete(damage.Value);
 		}
-		public void Scale(List<StatType> types, List<double> values)
+
+		public void Recalculate(List<StatType> types, List<double> values)
 		{
 			throw new NotImplementedException();
 		}
-
 
 		// Status
-		public ddouble GetStatus(StatusType type) // TODO where?
-		{
-			throw new NotImplementedException();
-		}
 		public Resistance GetStatus(StatusType statusType)
 		{
-			throw new NotImplementedException();
+			Resistance r = StatBlock.Resistances.Find(s => s.Status == statusType);
+			if (r == null) LogManager.Instance.LogWarning($"Entity {this.Guid} does not have status {statusType}");
+			return r;
 		}
 
 		// Tags
