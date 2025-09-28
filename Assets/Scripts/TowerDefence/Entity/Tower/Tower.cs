@@ -1,13 +1,6 @@
 using System;
 using System.Collections.Generic;
-using TowerDefence.Entity.Items;
-using TowerDefence.Entity.Resources;
-using TowerDefence.Entity.Skills;
-using TowerDefence.Entity.Skills.Buffs;
-using TowerDefence.Stats;
 using UnityEngine;
-using Util.Maths;
-using Util.Serialisation;
 
 namespace TowerDefence.Entity.Tower
 {
@@ -18,7 +11,8 @@ namespace TowerDefence.Entity.Tower
 
 		[SerializeField]
 		// Config and Mutators
-		public TowerPlan Plan;
+		public TowerPlan _plan;
+		public new IEntityPlan Plan => _plan;
 
 		// ===== Lineage =====
 		public List<Tower> Children { get; private set; }// Set on fusion
@@ -28,7 +22,8 @@ namespace TowerDefence.Entity.Tower
 		#endregion Preamble
 
 		#region Stats
-		//
+
+		// Tower-specific Stats
 		public double cooldown;
 		public double cost;
 
@@ -80,60 +75,46 @@ namespace TowerDefence.Entity.Tower
 			slerp,
 			ease,
 		}
-		public enum Type
-		{
-			None,
-			Amethyst,
-			Emerald,
-			Diamond,
-			Ruby,
-			Opal,
-			Sapphire,
-			Peridot,
-			Topaz,
-			Lapis,
-			Alexandrite,
-			Agate,
-			Spinel,
-			Beryl,
-			Morganite,
-			Onyx,
-			Garnet,
-			Citrine,
-			Aquamarine,
-			Mozanite,
-			Moonstone,
-			Tanzanite,
-			Jasper,
-			Jade,
-			Tourmaline,
-			Pyrite,
-			Oricahclum,
-			Socerorium,
-			Philosophine,
-			Seraphium,
-			DarkCrystallum,
-			Glass,
-			Urite,
-			SeaGlass,
-			Amberina,
-		}
-		public enum Colour
-		{
-
-
-		}
-		public enum Rank
-		{
-
-		}
-		public enum Tag
-		{
-			Turret,
-			Trap,
-
-		}
-
 		#endregion Enum
 	}
+
+	public enum TowerType
+	{
+		None,
+		Amethyst,
+		Emerald,
+		Diamond,
+		Ruby,
+		Opal,
+		Sapphire,
+		Peridot,
+		Topaz,
+		Lapis,
+		Alexandrite,
+		Agate,
+		Spinel,
+		Beryl,
+		Morganite,
+		Onyx,
+		Garnet,
+		Citrine,
+		Aquamarine,
+		Mozanite,
+		Moonstone,
+		Tanzanite,
+		Jasper,
+		Jade,
+		Tourmaline,
+		Pyrite,
+		Oricahclum,
+		Socerorium,
+		Philosophine,
+		Seraphium,
+		DarkCrystallum,
+		Glass,
+		Urite,
+		SeaGlass,
+		Amberina,
+	}
+
 }

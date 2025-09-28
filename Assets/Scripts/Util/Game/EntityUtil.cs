@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Debug;
+using Util.Debug;
 using JetBrains.Annotations;
 using TowerDefence.Entity;
 using TowerDefence.Entity.Skills;

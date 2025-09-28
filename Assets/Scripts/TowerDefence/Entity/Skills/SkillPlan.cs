@@ -1,6 +1,4 @@
 
-
-using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -19,35 +17,34 @@ namespace TowerDefence.Entity.Skills
 	{
 		[Header("Basic Information")]
 
-		public string Name { get; protected set; }
-		public SerialisableGuid Guid { get; protected set; }
-		public string Description { get; protected set; }
-		public int Level { get; protected set; }
-		public int MaxLevel { get; protected set; }
-		public float Cooldown { get; protected set; }
-		public float Duration { get; protected set; }
-		public float Range { get; protected set; }
-		public ddouble Damage { get; protected set; }
-		public float Radius { get; protected set; }
-		public float ChannelingTime { get; protected set; }
+		public string Name { get; set; }
+		public SerialisableGuid Guid { get; set; }
+		public string Description { get; set; }
+		public int Level { get; set; }
+		public int MaxLevel { get; set; }
+		public float Cooldown { get; set; }
+		public float Range { get; set; }
+		public ddouble Damage { get; set; }
+		public float Radius { get; set; }
+		public float ChannelingTime { get; set; }
 
 		[Header("Meta")]
-		public bool IsPositive { get; protected set; }
-		public bool ForMonster { get; protected set; }
-		public bool ForTower { get; protected set; }
-		public double Cost { get; protected set; }
+		public bool IsPositive { get; set; }
+		public bool ForMonster { get; set; }
+		public bool ForTower { get; set; }
 
 		[Header("Gameplay")]
-		public List<DepletableStat> StatCosts { get; protected set; }
-		public List<ResourceStat> ResourceCosts { get; protected set; }
+		public double Cost { get; set; }
+		public List<DepletableStat> StatCosts { get; set; }
+		public List<ResourceStat> ResourceCosts { get; set; }
 
 		[SerializeField]
-		public List<IEffect> Effects { get; protected set; }
-		public List<IPassive> Passives { get; protected set; }
+		public List<IEffect> Effects { get; set; }
+		public List<IPassive> Passives { get; set; }
 
 		// Ancestry
-		public SkillPlan Predecessor { get; protected set; }
-		public SkillPlan Successor { get; protected set; }
+		public SkillPlan Predecessor { get; set; }
+		public SkillPlan Successor { get; set; }
 
 
 		// public event Action<ISource, IModifier> OnApplied;

@@ -1,4 +1,4 @@
-using Debug;
+using Util.Debug;
 using UnityEngine;
 
 namespace TowerDefence.Entity.Skills.Trigger

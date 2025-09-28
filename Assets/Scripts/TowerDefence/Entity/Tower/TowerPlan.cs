@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
-using Debug;
+using Util.Debug;
 using TowerDefence.Entity.Resources;
 using TowerDefence.Entity.Skills;
+using TowerDefence.Entity.Skills.Buffs;
+using TowerDefence.Entity.Token;
 using TowerDefence.Stats;
 using UnityEditor;
 using UnityEngine;
@@ -16,55 +18,49 @@ namespace TowerDefence.Entity.Tower
 	{
 		#region Basic
 
-		// Id
-		public SerialisableGuid Guid
-		{
-			get { return _Guid; }
-			set
-			{
-				if (_Guid.IsEmpty())
-				{
-					_Guid = value;
-				}
-				else
-				{
-					LogManager.Instance.LogWarning("Attempting to set a GUID that is already set.");
-				}
-			}
-		}
-		[FormerlySerializedAs("Guid")][SerializeField] private SerialisableGuid _Guid = new SerialisableGuid(System.Guid.NewGuid());
-		public string Name
-		{
-			get { return _Name; }
-			set { _Name = value; }
-		}
+		// Meta
+		// public SerialisableGuid Guid
+		// {
+		// 	get { return _Guid; }
+		// 	set
+		// 	{
+		// 		if (_Guid.IsEmpty())
+		// 		{
+		// 			_Guid = value;
+		// 		}
+		// 		else
+		// 		{
+		// 			LogManager.Instance.LogWarning("Attempting to set a GUID that is already set.");
+		// 		}
+		// 	}
+		// }
+		// Creates a new serailisableGuid on init
+		// [FormerlySerializedAs("Guid")][SerializeField] private SerialisableGuid _Guid = new SerialisableGuid(System.Guid.NewGuid());
+		public SerialisableGuid Guid { get; protected set; }
+		public string Name { get; protected set; }
+		public bool IsCrown { get; protected set; }
 
-		GUID EntityPlan.Guid => throw new NotImplementedException();
+		// ===== Basic Stats =====
+		public StatBlock StatBlock { get; protected set; }
+		public ResourceBlock ResourceBlock { get; protected set; }
+		public List<IToken> StartingTokens { get; protected set; }
+		public List<SkillPlan> InitSkills { get; protected set; }
+		public List<BuffPlan> InitBuffs { get; protected set; }
 
-		StatBlock EntityPlan.StatBlock => throw new NotImplementedException();
-
-		ResourceBlock EntityPlan.ResourceBlock => throw new NotImplementedException();
-
-		[FormerlySerializedAs("Name")][SerializeField] private string _Name;
-
-		// Basic Stats
-		public StatBlock StatBlock;
-		public ResourceBlock ResourceBlock;
+		// Abilities
+		public List<SkillPlan> Skills { get; protected set; }
 
 		// Behavioural
-		public Tower.BulletCurve bulletType = Tower.BulletCurve.linear;
-		public Tower.Targetting targetting = Tower.Targetting.distance;
+		public Tower.BulletCurve BulletType { get; protected set; }
+		public Tower.Targetting Targetting { get; protected set; }
 
 		// Game Speed
 		public float reeling = 0;
 
-		// Skills
-		public List<ISkill> skills;
-
 		// Meta
 		public ElementStat Element;
-		public Tower.Type type = Tower.Type.None; // Identifies the tower
-		public List<Tower.Tag> tags = new List<Tower.Tag>() { };
+		public TowerType type = TowerType.None; // Identifies the tower
+		public List<Tag> tags = new List<Tag>() { };
 		public int rank = 0;
 
 		// === Sprites ===
@@ -155,11 +151,11 @@ namespace TowerDefence.Entity.Tower
 		{
 			DrawDefaultInspector();
 
-			TowerPlan script = (TowerPlan)target;
-			if (GUILayout.Button("Generate new GUID"))
-			{
-				script.Guid = new SerialisableGuid(Guid.NewGuid());
-			}
+			// TowerPlan script = (TowerPlan)target;
+			// if (GUILayout.Button("Generate new GUID"))
+			// {
+			// 	script.Guid = new SerialisableGuid(Guid.NewGuid());
+			// }
 		}
 	}
 }

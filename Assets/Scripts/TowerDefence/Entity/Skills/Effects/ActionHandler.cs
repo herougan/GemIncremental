@@ -7,7 +7,7 @@ namespace TowerDefence.Entity.Skills.Effects
 	{
 		ActionType Type { get; }
 
-		void ApplyAction(in GameContext context, in TriggerContext trigger, Action effect);
+		void ApplyAction(in GameContext context, in TriggerContext trigger, IEntity Entity, Action effect);
 		void Rollback(in GameContext context, Action effect);
 		void RemoveEffect(in GameContext context, Action effect);
 	}
@@ -20,7 +20,7 @@ namespace TowerDefence.Entity.Skills.Effects
 		{
 		}
 
-		public virtual void ApplyAction(in GameContext context, in TriggerContext trigger, Action effect)
+		public virtual void ApplyAction(in GameContext context, in TriggerContext trigger, IEntity Entity, Action effect)
 		{
 			// Default implementation does nothing
 		}

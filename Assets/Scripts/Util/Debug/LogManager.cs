@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace Debug
+namespace Util.Debug
 {
 	[ExecuteInEditMode]
 	public class LogManager : MonoBehaviour

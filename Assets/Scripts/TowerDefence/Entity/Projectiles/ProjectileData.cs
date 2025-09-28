@@ -1,16 +1,15 @@
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 using TowerDefence.Stats;
 using Util.Serialisation;
 using TowerDefence.Entity.Resources;
-using Unity.VisualScripting;
 using TowerDefence.Entity.Skills;
+using TowerDefence.Entity.Skills.Buffs;
 
 namespace TowerDefence.Entity.Projectile
 {
 	[CreateAssetMenu(fileName = "MonsterPlan", menuName = "TowerDefence/Entity/Projectile")]
-	public class MonsterPlan : ScriptableObject, EntityPlan
+	public class ProjectileData : ScriptableObject
 	{
 		#region Preamble
 
@@ -27,10 +26,9 @@ namespace TowerDefence.Entity.Projectile
 		public List<BuffPlan> Buffs; // Not sure if should be its own class or not
 
 		// ===== Meta =====
-		public Projectile.Type Type;
-		public Projectile.Type Hybrid;
-		public Projectile.Race Race;
-		public List<Projectile.Tag> Tags;
+		public ProjectileType Type;
+		public ProjectileType Hybrid;
+		public List<Tag> Tags;
 
 
 		// ==== Visuals ====
@@ -51,16 +49,6 @@ namespace TowerDefence.Entity.Projectile
 
 		#region Util
 
-		public GUID id => throw new System.NotImplementedException();
-
-		public GUID guid => throw new System.NotImplementedException();
-
-		StatBlock EntityPlan.StatBlock => throw new System.NotImplementedException();
-
-		GUID EntityPlan.Guid => throw new System.NotImplementedException();
-
-		ResourceBlock EntityPlan.ResourceBlock => throw new System.NotImplementedException();
-
 		public void Deserialize()
 		{
 			throw new System.NotImplementedException();
@@ -71,31 +59,6 @@ namespace TowerDefence.Entity.Projectile
 			throw new System.NotImplementedException();
 		}
 
-		// public void Deserialize()
-		// {
-		// 	throw new System.NotImplementedException();
-		// }
-
-		// public void Serialize()
-		// {
-		// 	throw new System.NotImplementedException();
-		// }
-
 		#endregion Util
-	}
-
-	[CustomEditor(typeof(MonsterPlan))]
-	public class MonsterDataEditor : Editor
-	{
-		public override void OnInspectorGUI()
-		{
-			DrawDefaultInspector();
-
-			MonsterPlan script = (MonsterPlan)target;
-			if (GUILayout.Button("Generate new GUID"))
-			{
-				script.Guid = new SerialisableGuid(System.Guid.NewGuid());
-			}
-		}
 	}
 }

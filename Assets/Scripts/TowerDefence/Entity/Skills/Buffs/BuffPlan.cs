@@ -13,42 +13,16 @@ namespace TowerDefence.Entity.Skills.Buffs
 	#region Class and Enums
 
 	[CreateAssetMenu(fileName = "Skill", menuName = "TowerDefence/Skills/Buff")]
-	public class BuffPlan : ScriptableObject, IPlan
+	public class BuffPlan : SkillPlan
 	{
-		[Header("Basic Information")]
-		public string Name { get; private set; }
-		public SerialisableGuid Guid { get; private set; }
-		public string Description { get; private set; }
-		public int Level { get; private set; }
-		public int MaxLevel { get; private set; }
-		public int Rank { get; private set; }
-		public SkillPlan Basis { get; private set; } // Basis for Buffplan
-
-		// Overwritten with custom editor
-		[HideInInspector] public float Cooldown { get; private set; }
-		[HideInInspector] public float Duration { get; private set; }
-		[HideInInspector] public float Range { get; private set; }
-		[HideInInspector] public float Damage { get; private set; }
-		[HideInInspector] public double Radius { get; private set; }
-
-		[Header("Gameplay")]
-		public List<DepletableStat> Costs { get; private set; }
-		public List<ResourceStat> ResourceCosts { get; private set; }
-
-		[SerializeField]
-		public List<Effect> Effects { get; private set; }
-		public List<Passive> Passives { get; private set; }
-
+		// ===== Buff Specific =====
+		public float Duration { get; private set; }
 		public BuffStackType StackType { get; private set; }
-		// public List<IModification> Modifications = new List<IModification>();
 
-		// effects
-
-		// bools (in buff)
 
 		// Ancestry
-		public BuffPlan Predecessor;
-		public BuffPlan Successor;
+		public new BuffPlan Predecessor;
+		public new BuffPlan Successor;
 
 
 		public void ApplyEffect(IEntity source, IEntity target)
@@ -126,6 +100,42 @@ namespace TowerDefence.Entity.Skills.Buffs
 
 			// Draw the rest
 			DrawDefaultInspector();
+
+
+			// Copy skill
+			EditorGUILayout.Space();
+			EditorGUILayout.LabelField("Copy From Existing SkillPlan", EditorStyles.boldLabel);
+
+			// Field to select an existing SkillPlan asset
+			SkillPlan sourceSkillPlan = (SkillPlan)EditorGUILayout.ObjectField(
+				"Source SkillPlan",
+				null,
+				typeof(SkillPlan),
+				false
+			);
+
+			if (sourceSkillPlan != null)
+			{
+				if (GUILayout.Button("Copy Properties"))
+				{
+					// Copy properties from sourceSkillPlan to script (BuffPlan)
+					script.Name = sourceSkillPlan.Name;
+					var type = typeof(SkillPlan);
+					var fields = type.GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+					foreach (var field in fields)
+					{
+						if (field.IsInitOnly) continue; // skip readonly fields
+						field.SetValue(script, field.GetValue(sourceSkillPlan));
+					}
+
+
+
+					// Copy other relevant properties as needed
+
+					// Mark as dirty so Unity saves changes
+					EditorUtility.SetDirty(script);
+				}
+			}
 		}
 	}
 

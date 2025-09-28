@@ -11,7 +11,11 @@ using TowerDefence.Entity.Skills;
 using TowerDefence.Entity.Attack.Damage;
 using TowerDefence.Entity.Token;
 using System.Linq;
-using Debug;
+using Util.Debug;
+using UnityEngine;
+using TowerDefence.Entity.Skills.Effects;
+using Action = TowerDefence.Entity.Skills.Effects.Action;
+using TowerDefence.Context;
 
 namespace TowerDefence.Entity
 {
@@ -34,11 +38,12 @@ namespace TowerDefence.Entity
 
 		// ===== Game State =====
 		List<Tag> Tags { get; }
-		EntityBehaviourType Behaviour { get; }
-		// TokenInventory TokenInventory { get; } // Use tokens
 		MileageBlock MileageBlock { get; }
 		TokenInventory TokenInventory { get; }
 		Kinematics Kinematics { get; }
+
+		// Current Behaviour
+		Behaviour Behaviour { get; }
 
 		#endregion State
 
@@ -47,7 +52,7 @@ namespace TowerDefence.Entity
 		// ===== Abilities =====
 		// Starting abilities
 		List<IBuff> Buffs { get; }
-		List<SkillPlan> Skills { get; } // Starting skills
+		List<ISkill> Skills { get; } // Starting skills
 		List<StatusBuff> Statuses { get; }
 		List<IBuff> TowerAuras { get; } // Active, tracked during game, influences towers within range.
 		List<IBuff> MonsterAuras { get; } // Active, tracked during game, influences monsters within range.
@@ -57,26 +62,8 @@ namespace TowerDefence.Entity
 
 		#region Events
 
-		// ===== Event =====
 		// == Stat ==
-		// General
-		public event Action<IEntity, IStat, ddouble> OnValueChanged;
-		public event Action<IEntity, IStat, ddouble> OnValueDecreased;
-		public event Action<IEntity, IStat, ddouble> OnValueIncreased;
-		// Depletable
-		public event Action<IEntity, IStat, ddouble> OnMaxValueChanged;
-		public event Action<IEntity, IStat, ddouble> OnCurrentValueDecreased;
-		public event Action<IEntity, IStat, ddouble> OnCurrentValueIncreased;
-		// Bonus
-		public event Action<IEntity, IStat, IStatMod> OnStatBonusAdded;
-		public event Action<IEntity, IStat, IStatMod> OnStatNerfAdded;
-		// Regenerable
-		public event Action<IEntity, IStat, ddouble> OnRegenerate;
-		public event Action<IEntity, IStat, ddouble> OnRegenValueChanged;
-		public event Action<IEntity, IStat, ddouble> OnRegenRateChanged;
-		// Element
-		public event Action<IEntity, IElement, ddouble> OnResistChanged;
-		public event Action<IEntity, IElement, ddouble> OnMasteryChanged;
+		// View in StatBlock
 
 		// = State =
 		// Generic 
@@ -85,14 +72,6 @@ namespace TowerDefence.Entity
 		public event Action<IEntity, IExpirable> OnBuffExpired;
 		public event Action<IEntity, IExpirable> OnDebuffExpired;
 		public event Action<IEntity, IExpirable> OnBuffStacked;
-		// TODO why do I need to track a damage's source? damage is from Fire Breath DOT
-		// WHAT IF: On hurt, hurt entity doing the damage?
-		// OR: (Likely not) Nerf the caster's Fire Breath damage DOT only (affects all)
-		// Let's you track damagers I guess - IExpirable and IDamage can have ISource with can have IEntity
-		// 1. DOT
-		// 2. Attack
-		// 3. Spell
-		// 4. AoE
 
 		// Fusion Event
 		// public event Action<IEntity, IExpirable, IExpirable, IEffectInteraction> OnBuffFused;
@@ -108,7 +87,6 @@ namespace TowerDefence.Entity
 		public event Action<IEntity> OnFirstBuff;
 		public event Action<IEntity> OnTargetted;
 		public event Action<IEntity> OnUntargetted;
-		// public event Action<IEntity> OnMeditateFinish; // Skills should settle this
 		public event Action<IEntity> OnSpellCast;
 
 		// Allies
@@ -129,9 +107,10 @@ namespace TowerDefence.Entity
 		public event Action<IEntity, IEntity> OnNotIsolated; // Entering
 
 		// Combat
+		public event Action<IEntity, IEntity> OnAttack; // Attacker, Target
 		public event Action<IEntity, IEntity> OnHit; // On normal attack by enemy (Typically tower-monster)
 		public event Action<IEntity, ISource> OnDOT; // On Damage over time tick (Skill/Expirable)
-		public event Action<IEntity> OnDeath; // If Health <= 0
+		public event Action<IEntity, ISource> OnDeath; // If Health <= 0
 		public event Action<IEntity, ISource> OnHurt;
 		public event Action<IEntity, ISource> OnHeal; // If Health > 0
 		public event Action<IEntity, ISource> OnVamp;
@@ -147,6 +126,13 @@ namespace TowerDefence.Entity
 		void RegisterResourceCallbacks();
 		void RegisterTokenCallbacks();
 		void RegisterElementCallbacks();
+		void RegisterSkillCallbacks();
+
+		// === Trigger Hooks ===
+
+		public Action<TriggerContext, IEntity, ISkill, IEffect> GetEvent(TriggerType triggerType);
+
+		public void SubscribeEvent(TriggerType type, Delegate _delegate);
 
 		#endregion Events
 
@@ -163,14 +149,9 @@ namespace TowerDefence.Entity
 
 		#region Methods
 
-		// ===== Methods =====
-		// Getters
-		public IStat GetStat(StatType type);
-		public float GetKinematics(KinematicsType type);
-		public float GetMileage(MileageType type);
-		public int GetResource(ResourceType type);
-		public int GetCounter(CounterType type);
-		public int GetInventory(ItemType type);
+		// ===== Getters =====
+
+		// None
 
 		// Buff Manipulation
 		public void ApplyBuff(IBuff buff);
@@ -203,9 +184,14 @@ namespace TowerDefence.Entity
 		public bool CheckMeta(MetaType metaType, string data);
 
 		#endregion Methods
+
+		#region Visuals
+
+		Texture2D Texture { get; }
+
+		#endregion Visuals
 	}
 
-	// ================================= //
 	public class Entity : IEntity
 	{
 		#region Information
@@ -224,11 +210,12 @@ namespace TowerDefence.Entity
 
 		// ===== Game State =====
 		public List<Tag> Tags { get; protected set; } // Can be gained and lost during a round
-		public EntityBehaviourType Behaviour { get; protected set; } // Current Behaviour State
 		public MileageBlock MileageBlock { get; protected set; }
 		public TokenInventory TokenInventory { get; }
 		public Kinematics Kinematics { get; }
-		public CountdownTimer AttackTimer { get; protected set; }
+
+		// Behaviour
+		public Behaviour Behaviour { get; protected set; }
 
 		#endregion State
 
@@ -237,7 +224,7 @@ namespace TowerDefence.Entity
 		// ===== Skills =====
 		// Abilities
 		public List<IBuff> Buffs { get; protected set; } // Active, tracked during game
-		public List<SkillPlan> Skills { get; protected set; }// Starting skills
+		public List<ISkill> Skills { get; protected set; }// Starting skills
 		public List<StatusBuff> Statuses { get; protected set; } // List of active status effects
 		public List<IBuff> TowerAuras { get; protected set; }// Active, tracked during game, influences towers within range.
 		public List<IBuff> MonsterAuras { get; protected set; }// Active, tracked during game, influences monsters within range.
@@ -246,26 +233,8 @@ namespace TowerDefence.Entity
 		#endregion Abilities
 
 		#region Events
-		// ===== Events =====
-		// = Stat =
-		// General
-		public event Action<IEntity, IStat, ddouble> OnValueChanged = delegate { };
-		public event Action<IEntity, IStat, ddouble> OnValueDecreased = delegate { };
-		public event Action<IEntity, IStat, ddouble> OnValueIncreased = delegate { };
-		// Depletable
-		public event Action<IEntity, IStat, ddouble> OnMaxValueChanged = delegate { };
-		public event Action<IEntity, IStat, ddouble> OnCurrentValueDecreased = delegate { };
-		public event Action<IEntity, IStat, ddouble> OnCurrentValueIncreased = delegate { };
-		// Bonus
-		public event Action<IEntity, IStat, IStatMod> OnStatBonusAdded = delegate { };
-		public event Action<IEntity, IStat, IStatMod> OnStatNerfAdded = delegate { };
-		// Regenerable
-		public event Action<IEntity, IStat, ddouble> OnRegenerate = delegate { };
-		public event Action<IEntity, IStat, ddouble> OnRegenValueChanged = delegate { };
-		public event Action<IEntity, IStat, ddouble> OnRegenRateChanged = delegate { };
-		// Element
-		public event Action<IEntity, IElement, ddouble> OnResistChanged = delegate { };
-		public event Action<IEntity, IElement, ddouble> OnMasteryChanged = delegate { };
+		// ===== Stat =====
+		// View in StatBlock
 
 		// = State =
 		// Generic 
@@ -274,6 +243,9 @@ namespace TowerDefence.Entity
 		public event Action<IEntity, IExpirable> OnBuffExpired = delegate { };
 		public event Action<IEntity, IExpirable> OnDebuffExpired = delegate { };
 		public event Action<IEntity, IExpirable> OnBuffStacked = delegate { };
+
+		// Fusion Event
+		// public event Action<IEntity, IExpirable, IExpirable, IEffectInteraction> OnBuffFused = delegate { };
 
 		// Game Space
 		public event Action<IEntity> OnReached = delegate { };
@@ -305,9 +277,10 @@ namespace TowerDefence.Entity
 		public event Action<IEntity, IEntity> OnNotIsolated = delegate { };
 
 		// Combat
+		public event Action<IEntity, IEntity> OnAttack = delegate { };
 		public event Action<IEntity, IEntity> OnHit = delegate { };
 		public event Action<IEntity, ISource> OnDOT = delegate { };
-		public event Action<IEntity> OnDeath = delegate { }; // If Health <= 0
+		public event Action<IEntity, ISource> OnDeath = delegate { }; // If Health <= 0; Dier, Source (Killer)
 		public event Action<IEntity, ISource> OnHurt = delegate { };
 		public event Action<IEntity, ISource> OnHeal = delegate { }; // If Health > 0
 		public event Action<IEntity, ISource> OnVamp = delegate { };
@@ -317,7 +290,7 @@ namespace TowerDefence.Entity
 		public event Action<IEntity, IStat> OnManaDry = delegate { };
 		public event Action<IEntity> OnRest = delegate { };
 
-		// Register Callbacks
+		// === Register Callbacks ===
 		public void RegisterCallbacks()
 		{
 			RegisterStatCallbacks();
@@ -398,8 +371,19 @@ namespace TowerDefence.Entity
 				OnMasteryChanged?.Invoke(this, element, value);
 			};
 		}
+		public void RegisterSkillCallbacks()
+		{
+			foreach (var skill in Skills)
+			{
+				RegisterSkillCallback(skill);
+			}
+			foreach (var buff in Buffs)
+			{
+				RegisterSkillCallback(buff);
+			}
+		}
 
-		// Register/Deregister Single
+		// === Register/Deregister Single ===
 		public void RegisterStatCallback()
 		{
 
@@ -432,10 +416,109 @@ namespace TowerDefence.Entity
 		{
 
 		}
+		public void RegisterSkillCallback(ISkill skill)
+		{
+			foreach (IEffect effect in skill.Plan.Effects)
+			{
+				RegisterEffectCallback(effect);
+			}
+		}
+		public void RegisterEffectCallback(IEffect effect)
+		{
+			foreach (var trigger in effect.Triggers)
+			{
+				RegisterTriggerCallback(trigger);
+			}
+		}
+		public void RegisterTriggerCallback(ITrigger trigger, ISkill skill)
+		{
+			switch (trigger.Type)
+			{
+				case TriggerType.Attack:
+					OnAttack += (entity, target) =>
+					{
+						// ConditionUtil
+						// EffectManager plays Skill (then it should be the EM that registers...)
+						// I can Trigger the Skill I guess? Then the EM resolves it? Skill holds the Trigger Context
+						trigger.CheckConditions(this, target);
+					};
+					break;
+				case TriggerType.Hit:
+					OnHit += (entity, target) =>
+					{
+						trigger.CheckConditions(this, target);
+					};
+					break;
+				case TriggerType.Death:
+					OnDeath += (entity) =>
+					{
+						trigger.CheckConditions(this, null);
+					};
+					break;
+				case TriggerType.Hurt:
+					OnHurt += (entity, source) =>
+					{
+						trigger.CheckConditions(this, null);
+					};
+					break;
+				case TriggerType.Heal:
+					OnHeal += (entity, source) =>
+					{
+						trigger.CheckConditions(this, null);
+					};
+					break;
+				case TriggerType.DOT:
+					OnDOT += (entity, source) =>
+					{
+						trigger.CheckConditions(this, null);
+					};
+					break;
+				default:
+					LogManager.Instance.LogWarning($"Trigger type {trigger.Type} not implemented in RegisterTriggerCallback");
+					break;
+			}
+		}
+		public void DeregisterSkillCallback(ISkill skill)
+		{
+			skill.OnSkillUsed -= EffectController.Instance.ResolveSkill;
+
+			// Instead of finding triggers under the skill (which may have changed somehow), 
+			// Detach all references to this skill
+		}
+
+		// ===== Trigger Hooks =====
+		public List<Action<TriggerContext, IEntity, ISkill, IEffect>> EffectActivations = new();
+		public Action<TriggerContext, IEntity, ISkill, IEffect> GetEvent(TriggerType triggerType)
+		{
+			switch (triggerType)
+			{
+				case TriggerType.Attack:
+					return OnAttack;
+				case TriggerType.Hit:
+					return OnHit;
+				case TriggerType.Death:
+					return OnDeath;
+				case TriggerType.Hurt:
+					return OnHurt;
+				case TriggerType.Heal:
+					return OnHeal;
+				case TriggerType.DOT:
+					return OnDOT;
+				default:
+					LogManager.Instance.LogWarning($"Trigger type {triggerType} not implemented in GetEvent");
+					return null;
+			}
+		}
+
+		public void SubscribeEvent(TriggerType type, Delegate _delegate)
+		{
+			GetEvent(type) += () => _delegate;
+		}
 
 		#endregion Events
 
 		#region Lifecycle
+
 		// ===== Lifecycle =====
 		public void Spawn()
 		{
@@ -453,10 +536,13 @@ namespace TowerDefence.Entity
 			}
 
 			// Get Skills based on EntityPlan
-			foreach (var skillPlan in Plan.Skills)
+			foreach (var skillPlan in Plan.InitSkills)
 			{
-				Skills.Add(skillPlan);
+				Skills.Add(new Skill(skillPlan));
 			}
+
+			// Events
+			OnSpawn?.Invoke(this);
 		}
 
 		public void Regenerate()
@@ -491,46 +577,19 @@ namespace TowerDefence.Entity
 		public void Die()
 		{
 			OnDeath?.Invoke(this);
-			// GameManager.Instance.EntityDied(this);
 		}
 
-		public void Attack() { }
+		public void Attack()
+		{
+			OnAttack?.Invoke(this, null);
+		}
 		#endregion Lifecycle
 
 		#region Methods
 
-		// ===== Methods ===== 
-		// Getters
-		public IStat GetStat(StatType type)
-		{
-			return StatBlock.StatMap[type];
-		}
+		// ===== Getters ===== 
 
-		public float GetKinematics(KinematicsType type)
-		{
-			throw new NotImplementedException();
-		}
-
-		public float GetMileage(MileageType type)
-		{
-			throw new NotImplementedException();
-		}
-
-		public int GetResource(ResourceType type)
-		{
-			throw new NotImplementedException();
-		}
-
-		public int GetCounter(CounterType type)
-		{
-			throw new NotImplementedException();
-		}
-
-		public int GetInventory(ItemType type)
-		{
-			throw new NotImplementedException();
-		}
-
+		// None
 
 		// Buff Manipulation
 
@@ -653,34 +712,35 @@ namespace TowerDefence.Entity
 
 		public void ForceSetStat(StatType type, ddouble value)
 		{
-			GetStat(type).SetValue(value);
+			StatBlock.GetStat(type).SetValue(value);
 		}
 
 		#endregion Admin
 
+		#region Visuals
+
+		public Texture2D Texture { get; protected set; }
+
+		#endregion Visuals
 	}
+	// ================================= //
 
 	public interface IPlan
 	{
+		// Meta
 		SerialisableGuid Guid { get; }
 		string Name { get; }
 	}
 
 	public interface IEntityPlan : IPlan
 	{
+		// Stat
 		StatBlock StatBlock { get; }
 		ResourceBlock ResourceBlock { get; }
+
+		// Initial
 		List<IToken> StartingTokens { get; }
 		List<BuffPlan> InitBuffs { get; }
-		List<SkillPlan> Skills { get; }
-	}
-
-	public enum EntityBehaviourType
-	{
-		HasBuff,
-		HasDebuff,
-		Attacking,
-		Channeling,
-		Fight,
+		List<SkillPlan> InitSkills { get; }
 	}
 }

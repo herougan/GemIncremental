@@ -1,0 +1,4 @@
+namespace TowerDefence.Entity.Monster
+{
+
+}

@@ -1,13 +1,5 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using TowerDefence.Entity.Resources;
-using TowerDefence.Entity.Skills;
-using TowerDefence.Entity.Skills.Buffs;
-using TowerDefence.Stats;
-using UnityEditor;
-using Util.Maths;
-using Random = UnityEngine.Random;
+using UnityEngine;
 
 namespace TowerDefence.Entity.Monster
 {
@@ -16,6 +8,7 @@ namespace TowerDefence.Entity.Monster
 	{
 		#region Information
 
+		[SerializeField]
 		MonsterPlan _plan;
 		public new IEntityPlan Plan => _plan;
 
@@ -58,53 +51,6 @@ namespace TowerDefence.Entity.Monster
 			Robot,
 			Mollusc,
 		}
-		public enum Type
-		{
-			None,
-			Bloodo,
-			Bubbling,
-			Dewy,
-			Drippie,
-			Ferro,
-			Gooey,
-			Grimeo,
-			Melta,
-			Muddy,
-			Oily,
-			Plasma,
-			Riverling,
-			Rotto,
-			Slimey,
-			Splashy,
-			Sticky,
-			Sweetie,
-			Toxa,
-			// Beast
-			Bat,
-			DireWolf,
-			Felid,
-			Werewolf,
-			// Spirit
-			Incarnation,
-			Ghost,
-			Avatar,
-			// Robot
-			RobotWalker,
-			// None,
-			// // Forest(s)
-			// Slime,
-			// Bat,
-			// // Cave(s)
-			// Undead,
-			Skeleton,
-			Pumpkin,
-			Ghoul,
-			// Milkbool,
-			// // Techno
-			// Electromite,
-			// Mollusc
-			Octopus,
-		}
 		public enum Category
 		{
 			/* Basic */
@@ -124,4 +70,53 @@ namespace TowerDefence.Entity.Monster
 
 		#endregion Enum
 	}
+
+	public enum MonsterType
+	{
+		None,
+		Bloodo,
+		Bubbling,
+		Dewy,
+		Drippie,
+		Ferro,
+		Gooey,
+		Grimeo,
+		Melta,
+		Muddy,
+		Oily,
+		Plasma,
+		Riverling,
+		Rotto,
+		Slimey,
+		Splashy,
+		Sticky,
+		Sweetie,
+		Toxa,
+		// Beast
+		Bat,
+		DireWolf,
+		Felid,
+		Werewolf,
+		// Spirit
+		Incarnation,
+		Ghost,
+		Avatar,
+		// Robot
+		RobotWalker,
+		// None,
+		// // Forest(s)
+		// Slime,
+		// Bat,
+		// // Cave(s)
+		// Undead,
+		Skeleton,
+		Pumpkin,
+		Ghoul,
+		// Milkbool,
+		// // Techno
+		// Electromite,
+		// Mollusc
+		Octopus,
+	}
+
 }

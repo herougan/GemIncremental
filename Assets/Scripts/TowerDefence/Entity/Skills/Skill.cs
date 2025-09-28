@@ -9,14 +9,14 @@ namespace TowerDefence.Entity.Skills
 {
 	public interface ISkill : ISource
 	{
-		// Info
-		int Level { get; }
-
-		// Meta
-		IEntity Caster { get; }
+		// Info]
+		public SkillPlan Plan { get; }
 
 		// Data
 		public ddouble Scale { get; }
+
+		// State
+		public List<CountdownTimer> Timers { get; }
 
 		// ===== Init =====
 		// public void SetSelfInit();
@@ -25,37 +25,36 @@ namespace TowerDefence.Entity.Skills
 		// public void ApplyAction(IEntity source, IEntity target);
 
 		// Events
-		public event Action<IEntity> OnApplied; // Applied on
+		public event Action<IEntity> OnLearned; // Applied on
+
+		// Methods
+		public void Tick(float t);
 	}
 
 	[Serializable]
 	public class Skill : ISkill
 	{
 		// Info
-		public int Level { get; set; }
-		public ddouble Scale { get; set; }
-		public int Priority { get; set; }
+		public ddouble Scale { get; protected set; }
+
 
 		// Meta
-		public bool IsPassive { get; set; }
-		public bool IsPositive { get; set; }
-		public bool ForMonster { get; set; }
-		public bool ForTower { get; set; }
+		public bool IsPassive { get; protected set; }
+		public bool IsPositive { get; protected set; }
+		public bool ForMonster { get; protected set; }
+		public bool ForTower { get; protected set; }
 
 		// Events
-		public event Action<IEntity> OnApplied;
+		public event Action<IEntity> OnLearned;
+
+		// State
+		public List<CountdownTimer> Timers { get; protected set; }
 
 		// Main Skill Info
 
-		public SkillPlan Plan { get; set; }
+		public SkillPlan Plan { get; protected set; }
 
-		public IEntity Entity { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-		public ISource Source => throw new NotImplementedException();
-
-		public IEntity Affected => throw new NotImplementedException();
-
-		public IEntity Caster => throw new NotImplementedException();
+		public IEntity Caster { get; protected set; }
 
 		public Skill(SkillPlan plan)
 		{
@@ -67,6 +66,19 @@ namespace TowerDefence.Entity.Skills
 			this.Plan = plan;
 			this.Scale = scale;
 		}
+
+		#region Methods
+
+		public void Tick(float t)
+		{
+			// Tick timers
+			foreach (var timer in Timers)
+			{
+				timer.Tick(t);
+			}
+		}
+
+		#endregion Methods
 	}
 
 	// ===== Spirce and Affects =====

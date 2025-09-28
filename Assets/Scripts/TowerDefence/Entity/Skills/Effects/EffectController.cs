@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Debug;
+using Util.Debug;
 using TowerDefence.Context;
 using TowerDefence.Entity.Skills.Effects;
 
@@ -19,20 +19,20 @@ namespace TowerDefence.Entity.Skills.ActionHandler
 			return null;
 		}
 
-		public static void ApplyAction(GameContext context, TriggerContext trigger, Effect effect)
+		public static void ApplyAction(GameContext context, TriggerContext trigger, IEntity Entity, Effect effect)
 		{
 			foreach (Action action in effect.Actions)
 			{
-				ApplyAction(context, trigger, action);
+				ApplyAction(context, trigger, Entity, action);
 			}
 		}
 
-		public static void ApplyAction(GameContext context, TriggerContext trigger, Action action)
+		public static void ApplyAction(GameContext context, TriggerContext trigger, IEntity Entity, Action action)
 		{
 			ActionHandlers.TryGetValue(action.ActionType, out var handler);
 			if (handler != null)
 			{
-				handler.ApplyAction(context, trigger, action);
+				handler.ApplyAction(context, trigger, Entity, action);
 			}
 			else
 			{

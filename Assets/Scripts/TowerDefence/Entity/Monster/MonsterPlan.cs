@@ -6,6 +6,8 @@ using Util.Serialisation;
 using TowerDefence.Entity.Resources;
 using Unity.VisualScripting;
 using TowerDefence.Entity.Skills;
+using TowerDefence.Entity.Token;
+using TowerDefence.Entity.Skills.Buffs;
 
 namespace TowerDefence.Entity.Monster
 {
@@ -14,31 +16,35 @@ namespace TowerDefence.Entity.Monster
 	{
 		#region Preamble
 
-		// Id
-		public SerialisableGuid Guid { get; set; }
-		public string Name { get; set; }
+		// ===== Meta =====
+		public SerialisableGuid Guid { get; protected set; }
+		public string Name { get; protected set; }
+		public bool IsBoss { get; protected set; }
+
 
 		//  ===== Basic Stats =====
-		public StatBlock StatBlock;
-		public ResourceBlock ResourceBlock;
+		public StatBlock StatBlock { get; protected set; }
+		public ResourceBlock ResourceBlock { get; protected set; }
+		public List<IToken> StartingTokens { get; protected set; }
+		public List<SkillPlan> InitSkills { get; protected set; }
+		public List<BuffPlan> InitBuffs { get; protected set; }
 
-		// Effect
-		public List<SkillPlan> Skills;
-		public List<BuffPlan> Buffs;
+		// Abilities
+		public List<SkillPlan> Skills { get; protected set; }
 
 		// ===== Meta =====
-		public Monster.Type Type;
-		public Monster.Type Hybrid;
-		public Monster.Race Race;
-		public List<Monster.Tag> Tags;
+		public MonsterType Type { get; protected set; }
+		public MonsterType Hybrid { get; protected set; }
+		public Monster.Race Race { get; protected set; }
+		public List<Tag> Tags { get; protected set; }
 
 
 		// ==== Visuals ====
-		public Sprite HeadSprite;
-		public Sprite BaseSprite;
-		public Sprite EvolveSprite;
+		public Sprite HeadSprite { get; protected set; }
+		public Sprite BaseSprite { get; protected set; }
+		public Sprite EvolveSprite { get; protected set; }
 		//
-		public Texture2D MonsterTexture;
+		public Texture2D Texture { get; protected set; }
 
 
 		// ==== Audio ====
@@ -50,18 +56,6 @@ namespace TowerDefence.Entity.Monster
 		#endregion Preamble
 
 		#region Util
-
-		public GUID id => throw new System.NotImplementedException();
-
-		public GUID guid => throw new System.NotImplementedException();
-
-		StatBlock EntityPlan.StatBlock => throw new System.NotImplementedException();
-
-		GUID IEntityPlan.Guid => throw new System.NotImplementedException();
-
-		StatBlock IEntityPlan.StatBlock => throw new System.NotImplementedException();
-
-		ResourceBlock IEntityPlan.ResourceBlock => throw new System.NotImplementedException();
 
 		public void Deserialize()
 		{
@@ -84,6 +78,28 @@ namespace TowerDefence.Entity.Monster
 		// }
 
 		#endregion Util
+
+		#region Init
+
+		public MonsterPlan()
+		{
+			// Init default values
+			Guid = new SerialisableGuid(System.Guid.NewGuid());
+			Name = "New Monster";
+
+			StatBlock = new StatBlock();
+			ResourceBlock = new ResourceBlock();
+
+			StartingTokens = new List<IToken>() { };
+			InitBuffs = new List<BuffPlan>() { };
+
+			Skills = new List<SkillPlan>() { };
+			InitBuffs = new List<BuffPlan>() { };
+
+			Type = MonsterType.None;
+		}
+
+		#endregion Inits
 	}
 
 	[CustomEditor(typeof(MonsterPlan))]
@@ -93,11 +109,11 @@ namespace TowerDefence.Entity.Monster
 		{
 			DrawDefaultInspector();
 
-			MonsterPlan script = (MonsterPlan)target;
-			if (GUILayout.Button("Generate new GUID"))
-			{
-				script.Guid = new SerialisableGuid(System.Guid.NewGuid());
-			}
+			// MonsterPlan script = (MonsterPlan)target;
+			// if (GUILayout.Button("Generate new GUID"))
+			// {
+			// 	script.Guid = new SerialisableGuid(System.Guid.NewGuid());
+			// }
 		}
 	}
 }

@@ -1,7 +1,7 @@
 
 using System;
 using System.Collections.Generic;
-using Debug;
+using Util.Debug;
 using TowerDefence.Context;
 using TowerDefence.Entity;
 using TowerDefence.Entity.Monster;

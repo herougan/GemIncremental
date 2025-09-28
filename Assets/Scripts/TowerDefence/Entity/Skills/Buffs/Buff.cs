@@ -5,7 +5,7 @@ using Util.Maths;
 
 namespace TowerDefence.Entity.Skills.Buffs
 {
-	public interface IBuff : IExpirable // giving IBuff these interfaces forces the abstract object to have effect when the data ALREADY has effect.
+	public interface IBuff : ISkill, IExpirable // giving IBuff these interfaces forces the abstract object to have effect when the data ALREADY has effect.
 	{
 
 		// Functions
@@ -27,6 +27,7 @@ namespace TowerDefence.Entity.Skills.Buffs
 		// Methods
 		public void Stack(IBuff buff);
 		public void Stack(float duration, int rank, float value, IBuff buff);
+		public void Tick(float t);
 	}
 
 	public enum BuffType
@@ -165,6 +166,7 @@ namespace TowerDefence.Entity.Skills.Buffs
 	}
 
 	// ====== Enum ======
+	[Serializable]
 	public struct BuffStackType
 	{
 		public MathOperation TimeOperation;

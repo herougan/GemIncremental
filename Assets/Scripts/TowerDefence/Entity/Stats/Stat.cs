@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Debug;
+using Util.Debug;
 using TowerDefence.Entity.Skills;
 using TowerDefence.Entity.Skills.Buffs;
 using TowerDefence.Entity.Skills.Keywords;

@@ -1,0 +1,12 @@
+entity.spawn();
+entityObject = MonsterPool.Instance.TrySpawn...
+
+RegisterEntityCallbacks(entity);
+
+
+
+
+
+
+OnMeditate
+OnMeditateEnd

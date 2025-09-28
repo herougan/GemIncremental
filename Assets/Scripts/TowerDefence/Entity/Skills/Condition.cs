@@ -57,12 +57,12 @@ namespace TowerDefence.Entity.Skills
 
 	public class RaceCondition : Condition
 	{
-		public RaceCondition(Monster.Monster.Type type) : base(ConditionType.Race)
+		public RaceCondition(Monster.MonsterType type) : base(ConditionType.Race)
 		{
 
 		}
 
-		public RaceCondition(Tower.Tower.Type type) : base(ConditionType.Race)
+		public RaceCondition(Tower.TowerType type) : base(ConditionType.Race)
 		{
 
 		}

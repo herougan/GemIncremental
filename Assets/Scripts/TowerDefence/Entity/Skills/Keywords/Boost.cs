@@ -49,12 +49,12 @@ namespace TowerDefence.Entity.Skills.Keywords
 		// public new BoostType BoostType { get; private set; } = BoostType.Bane;
 
 		// public new MathOperation Operator { get; private set; } = MathOperation.Multiply;
-		public BoostBane(ddouble value, Monster.Monster.Type monsterType) : base(BoostType.Bane, value, MathOperation.Multiply, new RaceCondition(monsterType))
+		public BoostBane(ddouble value, Monster.MonsterType monsterType) : base(BoostType.Bane, value, MathOperation.Multiply, new RaceCondition(monsterType))
 		{
 			throw new System.NotImplementedException();
 		}
 
-		public BoostBane(ddouble value, Tower.Tower.Type towerType) : base(BoostType.Bane, value, MathOperation.Multiply, new RaceCondition(towerType))
+		public BoostBane(ddouble value, Tower.TowerType towerType) : base(BoostType.Bane, value, MathOperation.Multiply, new RaceCondition(towerType))
 		{
 			throw new System.NotImplementedException();
 		}

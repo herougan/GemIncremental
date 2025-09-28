@@ -79,7 +79,11 @@ namespace Util.Maths
 			TimerComplete.Invoke();
 		}
 
-		public void Update(float time)
+		/// <summary>
+		/// Updates the timer. Call this method in your game loop with the time elapsed since
+		/// the last update (in seconds).
+		/// </summary>
+		public void Tick(float time)
 		{
 			if (!started) return; // If not started, do nothing
 			if (!Periodic && fired) return; // If not periodic and already fired, do nothing
@@ -112,7 +116,7 @@ namespace Util.Maths
 		public event Action<int> TimerComplete = delegate { };
 		private int rung;
 
-		public TimerList(List<float> countdownTimes)
+		public CountdownCollection(List<float> countdownTimes)
 		{
 			foreach (float countdownTime in countdownTimes)
 			{
@@ -120,7 +124,7 @@ namespace Util.Maths
 			}
 		}
 
-		public TimerList SetPeriodic()
+		public CountdownCollection SetPeriodic()
 		{
 			foreach (var timer in timers)
 			{
@@ -138,11 +142,11 @@ namespace Util.Maths
 			timers[timers.Count - 1].TimerComplete += OnRing;
 		}
 
-		public void Update(float time)
+		public void Tick(float time)
 		{
 			foreach (var timer in timers)
 			{
-				timer.Update(time);
+				timer.Tick(time);
 			}
 		}
 
