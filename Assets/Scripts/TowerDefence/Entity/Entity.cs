@@ -5,7 +5,6 @@ using TowerDefence.Stats;
 using Util.Maths;
 using TowerDefence.Entity.Skills.Buffs;
 using TowerDefence.Entity.Resources;
-using TowerDefence.Entity.Items;
 using Util.Serialisation;
 using TowerDefence.Entity.Skills;
 using TowerDefence.Entity.Attack.Damage;
@@ -14,8 +13,9 @@ using System.Linq;
 using Util.Debug;
 using UnityEngine;
 using TowerDefence.Entity.Skills.Effects;
-using Action = TowerDefence.Entity.Skills.Effects.Action;
 using TowerDefence.Context;
+using TowerDefence.Entity.Behaviour;
+using TowerDefence.Entity.Skills.ActionHandler;
 
 namespace TowerDefence.Entity
 {
@@ -43,7 +43,7 @@ namespace TowerDefence.Entity
 		Kinematics Kinematics { get; }
 
 		// Current Behaviour
-		Behaviour Behaviour { get; }
+		IBehaviour Behaviour { get; }
 
 		#endregion State
 
@@ -150,8 +150,14 @@ namespace TowerDefence.Entity
 		#region Methods
 
 		// ===== Getters =====
+		IResistance GetStatus(StatusType type);
+		float GetKinematics(KinematicsType type);
+		IResource GetResource(ResourceType type);
+		IStat GetStat(StatType type);
+		IElement GetElement(ElementType type);
+		IToken GetToken(TokenType type);
+		IMileage GetMileage(MileageType type);
 
-		// None
 
 		// Buff Manipulation
 		public void ApplyBuff(IBuff buff);
@@ -173,7 +179,6 @@ namespace TowerDefence.Entity
 
 		// Status
 		public bool ContainStatus(StatusType statusType);
-		Resistance GetStatus(StatusType statusType);
 
 		// Tags
 		public void AddTag(Tag tag);
@@ -215,7 +220,7 @@ namespace TowerDefence.Entity
 		public Kinematics Kinematics { get; }
 
 		// Behaviour
-		public Behaviour Behaviour { get; protected set; }
+		public IBehaviour Behaviour { get; protected set; }
 
 		#endregion State
 
@@ -301,56 +306,6 @@ namespace TowerDefence.Entity
 		public void RegisterStatCallbacks()
 		{
 			StatBlock.RegisterCallbacks();
-
-			// = Hook statblock events to entity events =
-			// General
-			StatBlock.OnValueChanged += (stat, value) =>
-			{
-				OnValueChanged?.Invoke(this, stat, value);
-			};
-			StatBlock.OnValueDecreased += (stat, value) =>
-			{
-				OnValueDecreased?.Invoke(this, stat, value);
-			};
-			StatBlock.OnValueIncreased += (stat, value) =>
-			{
-				OnValueIncreased?.Invoke(this, stat, value);
-			};
-			// Depletable
-			StatBlock.OnMaxValueChanged += (stat, value) =>
-			{
-				OnMaxValueChanged?.Invoke(this, stat, value);
-			};
-			StatBlock.OnCurrentValueDecreased += (stat, value) =>
-			{
-				OnCurrentValueDecreased?.Invoke(this, stat, value);
-			};
-			StatBlock.OnCurrentValueIncreased += (stat, value) =>
-			{
-				OnCurrentValueIncreased?.Invoke(this, stat, value);
-			};
-			// Bonus
-			StatBlock.OnStatBonusAdded += (stat, mod) =>
-			{
-				OnStatBonusAdded?.Invoke(this, stat, mod);
-			};
-			StatBlock.OnStatNerfAdded += (stat, mod) =>
-			{
-				OnStatNerfAdded?.Invoke(this, stat, mod);
-			};
-			// Regenerable
-			StatBlock.OnRegenerate += (stat, regen) =>
-			{
-				OnRegenerate?.Invoke(this, stat, regen);
-			};
-			StatBlock.OnRegenValueChanged += (stat, value) =>
-			{
-				OnRegenValueChanged?.Invoke(this, stat, value);
-			};
-			StatBlock.OnRegenRateChanged += (stat, rate) =>
-			{
-				OnRegenRateChanged?.Invoke(this, stat, rate);
-			};
 		}
 		public void RegisterResourceCallbacks()
 		{
@@ -358,18 +313,11 @@ namespace TowerDefence.Entity
 		}
 		public void RegisterTokenCallbacks()
 		{
+			TokenInventory.RegisterCallbacks();
 		}
 		public void RegisterElementCallbacks()
 		{
 			ElementBlock.RegisterCallbacks();
-			ElementBlock.OnResistChanged += (element, value) =>
-			{
-				OnResistChanged?.Invoke(this, element, value);
-			};
-			ElementBlock.OnMasteryChanged += (element, value) =>
-			{
-				OnMasteryChanged?.Invoke(this, element, value);
-			};
 		}
 		public void RegisterSkillCallbacks()
 		{
@@ -427,60 +375,18 @@ namespace TowerDefence.Entity
 		{
 			foreach (var trigger in effect.Triggers)
 			{
-				RegisterTriggerCallback(trigger);
+				RegisterTriggerCallback(trigger, effect.Actions);
 			}
 		}
-		public void RegisterTriggerCallback(ITrigger trigger, ISkill skill)
+		public void RegisterTriggerCallback(ITrigger trigger, List<IAction> actions)
 		{
-			switch (trigger.Type)
-			{
-				case TriggerType.Attack:
-					OnAttack += (entity, target) =>
-					{
-						// ConditionUtil
-						// EffectManager plays Skill (then it should be the EM that registers...)
-						// I can Trigger the Skill I guess? Then the EM resolves it? Skill holds the Trigger Context
-						trigger.CheckConditions(this, target);
-					};
-					break;
-				case TriggerType.Hit:
-					OnHit += (entity, target) =>
-					{
-						trigger.CheckConditions(this, target);
-					};
-					break;
-				case TriggerType.Death:
-					OnDeath += (entity) =>
-					{
-						trigger.CheckConditions(this, null);
-					};
-					break;
-				case TriggerType.Hurt:
-					OnHurt += (entity, source) =>
-					{
-						trigger.CheckConditions(this, null);
-					};
-					break;
-				case TriggerType.Heal:
-					OnHeal += (entity, source) =>
-					{
-						trigger.CheckConditions(this, null);
-					};
-					break;
-				case TriggerType.DOT:
-					OnDOT += (entity, source) =>
-					{
-						trigger.CheckConditions(this, null);
-					};
-					break;
-				default:
-					LogManager.Instance.LogWarning($"Trigger type {trigger.Type} not implemented in RegisterTriggerCallback");
-					break;
-			}
+
+
 		}
+
 		public void DeregisterSkillCallback(ISkill skill)
 		{
-			skill.OnSkillUsed -= EffectController.Instance.ResolveSkill;
+			// skill.OnSkillUsed -= EffectController.Instance.ResolveSkill;
 
 			// Instead of finding triggers under the skill (which may have changed somehow), 
 			// Detach all references to this skill
@@ -488,6 +394,13 @@ namespace TowerDefence.Entity
 
 		// ===== Trigger Hooks =====
 		public List<Action<TriggerContext, IEntity, ISkill, IEffect>> EffectActivations = new();
+		public void CreateEffectActivation()
+		{
+			EffectActivations.Add((context, source, skill, effect) =>
+			{
+				EffectController.ApplyAction(context, source, skill, effect);
+			});
+		}
 		public Action<TriggerContext, IEntity, ISkill, IEffect> GetEvent(TriggerType triggerType)
 		{
 			switch (triggerType)
@@ -576,7 +489,7 @@ namespace TowerDefence.Entity
 
 		public void Die()
 		{
-			OnDeath?.Invoke(this);
+			OnDeath?.Invoke(this, null);
 		}
 
 		public void Attack()
@@ -588,6 +501,52 @@ namespace TowerDefence.Entity
 		#region Methods
 
 		// ===== Getters ===== 
+		public Resistance GetStatus(StatusType statusType)
+		{
+			Resistance r = StatBlock.Resistances.Find(s => s.Status == statusType);
+			if (r == null) LogManager.Instance.LogWarning($"Entity {this.Guid} does not have status {statusType}");
+			return r;
+		}
+
+		public Kinematics GetKinematics(KinematicsCondition kinCon)
+		{
+			return Kinematics;
+		}
+
+		IResistance IEntity.GetStatus(StatusType type)
+		{
+			return GetStatus(type);
+		}
+
+		public float GetKinematics(KinematicsType type)
+		{
+			throw new NotImplementedException();
+		}
+
+		public IResource GetResource(ResourceType type)
+		{
+			throw new NotImplementedException();
+		}
+
+		public IStat GetStat(StatType type)
+		{
+			throw new NotImplementedException();
+		}
+
+		public IElement GetElement(ElementType type)
+		{
+			throw new NotImplementedException();
+		}
+
+		public IToken GetToken(TokenType type)
+		{
+			throw new NotImplementedException();
+		}
+
+		public IMileage GetMileage(MileageType type)
+		{
+			throw new NotImplementedException();
+		}
 
 		// None
 
@@ -649,14 +608,6 @@ namespace TowerDefence.Entity
 			throw new NotImplementedException();
 		}
 
-		// Status
-		public Resistance GetStatus(StatusType statusType)
-		{
-			Resistance r = StatBlock.Resistances.Find(s => s.Status == statusType);
-			if (r == null) LogManager.Instance.LogWarning($"Entity {this.Guid} does not have status {statusType}");
-			return r;
-		}
-
 		// Tags
 		public void AddTag(Tag tag)
 		{
@@ -668,7 +619,7 @@ namespace TowerDefence.Entity
 			throw new NotImplementedException();
 		}
 
-		public void ApplyModification(Action action)
+		public void ApplyModification(IAction action)
 		{
 			throw new NotImplementedException();
 		}

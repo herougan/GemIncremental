@@ -14,6 +14,7 @@ using TowerDefence.Stats;
 using UnityEngine;
 using Util.Maths;
 using Random = UnityEngine.Random;
+using TowerDefence.Entity.Behaviour;
 
 namespace TowerDefence.Library
 {
@@ -198,19 +199,19 @@ namespace TowerDefence.Library
 				case KinematicsCondition kinCond:
 					return MathsLib.Compare(entity.GetKinematics(kinCond.Param), kinCond.Value, kinCond.Comparative);
 				case MileageCondition mileageCond:
-					return MathsLib.Compare(entity.GetMileage(mileageCond.MileageType), mileageCond.Mileage, mileageCond.Comparative);
+					return MathsLib.Compare(entity.GetMileage(mileageCond.MileageType).Value, mileageCond.Mileage, mileageCond.Comparative);
 				case ResourceCondition resourceCond:
-					return MathsLib.Compare(entity.GetResource(resourceCond.ResourceType), resourceCond.RequiredAmount, resourceCond.Comparative);
-				case CounterCondition counterCond:
-					return MathsLib.Compare(entity.GetCounter(counterCond.CounterType), counterCond.RequiredCount, counterCond.Comparative);
-				case EntityInventoryCondition entityInventoryCond:
-					if (entityInventoryCond.RequireNoItems && entity.GetInventory(entityInventoryCond.ItemType) > 0)
-						return false; // Entity should not have the item
-					if (entityInventoryCond.RequireHoldingItems && entity.GetInventory(entityInventoryCond.ItemType) == 0)
-						return false; // Entity should have the item
-					if (entityInventoryCond.RequiredCount < 0)
-						return true; // No specific count required, just check if the item exists
-					return MathsLib.Compare(entity.GetInventory(entityInventoryCond.ItemType), entityInventoryCond.RequiredCount, entityInventoryCond.Comparative);
+					return MathsLib.Compare(entity.GetResource(resourceCond.ResourceType).Value, resourceCond.RequiredAmount, resourceCond.Comparative);
+				case TokenCondition tokenCond:
+					return MathsLib.Compare(entity.GetToken(tokenCond.TokenType).Number, tokenCond.RequiredCount, tokenCond.Comparative);
+				// case EntityInventoryCondition entityInventoryCond:
+				// 	if (entityInventoryCond.RequireNoItems && entity.GetInventory(entityInventoryCond.ItemType) > 0)
+				// 		return false; // Entity should not have the item
+				// 	if (entityInventoryCond.RequireHoldingItems && entity.GetInventory(entityInventoryCond.ItemType) == 0)
+				// 		return false; // Entity should have the item
+				// 	if (entityInventoryCond.RequiredCount < 0)
+				// 		return true; // No specific count required, just check if the item exists
+				// 	return MathsLib.Compare(entity.GetInventory(entityInventoryCond.ItemType), entityInventoryCond.RequiredCount, entityInventoryCond.Comparative);
 				case EntityBehaviourCondition entityBehaviourCond:
 					return CheckBehaviour(entityBehaviourCond.BehaviourType, entity);
 				case StatusCondition statusCond:
@@ -226,7 +227,7 @@ namespace TowerDefence.Library
 
 		public static bool CheckBehaviour(EntityBehaviourType behaviourType, IEntity entity)
 		{
-			return behaviourType == entity.Behaviour;
+			return behaviourType == entity.Behaviour.Type;
 		}
 
 		#endregion IBuff/Debuff Application
@@ -242,13 +243,13 @@ namespace TowerDefence.Library
 				case KinematicsCondition kinCond:
 					return GetKinematics(entity, kinCond);
 				case MileageCondition mileageCond:
-					return entity.GetMileage(mileageCond.MileageType);
+					return entity.GetMileage(mileageCond.MileageType).Value;
 				case ResourceCondition resourceCond:
-					return entity.GetResource(resourceCond.ResourceType);
-				case CounterCondition counterCond:
-					return entity.GetCounter(counterCond.CounterType);
-				case EntityInventoryCondition entityInventoryCond:
-					return entity.GetInventory(entityInventoryCond.ItemType);
+					return entity.GetResource(resourceCond.ResourceType).Value;
+				case TokenCondition tokenCond:
+					return entity.GetToken(tokenCond.TokenType).Number;
+				// case EntityInventoryCondition entityInventoryCond:
+				// 	return entity.GetInventory(entityInventoryCond.ItemType);
 				default:
 					throw new ArgumentException($"Unknown condition type: {condition.GetType()}");
 			}

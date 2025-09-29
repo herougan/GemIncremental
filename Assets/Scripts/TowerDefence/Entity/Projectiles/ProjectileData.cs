@@ -5,6 +5,7 @@ using Util.Serialisation;
 using TowerDefence.Entity.Resources;
 using TowerDefence.Entity.Skills;
 using TowerDefence.Entity.Skills.Buffs;
+using TowerDefence.Entity.Projectiles;
 
 namespace TowerDefence.Entity.Projectile
 {
@@ -27,7 +28,6 @@ namespace TowerDefence.Entity.Projectile
 
 		// ===== Meta =====
 		public ProjectileType Type;
-		public ProjectileType Hybrid;
 		public List<Tag> Tags;
 
 

@@ -12,31 +12,30 @@ namespace TowerDefence.Game.ActionHandler.Stat
 
 		public void ApplyAction(GameContext context, TriggerContext trigger, Action effect)
 		{
-			// Default implementation for applying effects
-			TriggerContext triggerContext = context.GetTriggerContext(effect.Trigger);
-			IEntity entity = triggerContext.Target;
-			entity.GetStat(effect.StatType).OperateValue(effect.Value, effect.Operation);
+			// // Default implementation for applying effects
+			// IEntity entity = trigger.Targets;
+			// entity.GetStat(effect.StatType).OperateValue(effect.Value, effect.Operation);
 
-			if (effect is SpawnAction spawnAction)
-			{
-				// Spawn the entity at the specified position
-				IEntity spawnedEntity = context.SpawnEntity(spawnAction.EntityType, spawnAction.Position, spawnAction.Rotation);
+			// if (effect is SpawnAction spawnAction)
+			// {
+			// 	// Spawn the entity at the specified position
+			// 	IEntity spawnedEntity = context.SpawnEntity(spawnAction.EntityType, spawnAction.Position, spawnAction.Rotation);
 
-				// Optionally, apply additional effects or initialization to the spawned entity
-				if (spawnAction.InitialStats != null)
-				{
-					foreach (var stat in spawnAction.InitialStats)
-					{
-						spawnedEntity.GetStat(stat.Key).SetValue(stat.Value);
-					}
-				}
+			// 	// Optionally, apply additional effects or initialization to the spawned entity
+			// 	if (spawnAction.InitialStats != null)
+			// 	{
+			// 		foreach (var stat in spawnAction.InitialStats)
+			// 		{
+			// 			spawnedEntity.GetStat(stat.Key).SetValue(stat.Value);
+			// 		}
+			// 	}
 
-				if (trigger is DieTriggerContext dieTriggerContext) { }
-			}
-			else
-			{
-				LogManager.Instance.LogError($"SpawnHandler: Unsupported action type {effect.GetType()} for ApplyAction.");
-			}
+			// 	if (trigger is DieTriggerContext dieTriggerContext) { }
+			// }
+			// else
+			// {
+			// 	LogManager.Instance.LogError($"SpawnHandler: Unsupported action type {effect.GetType()} for ApplyAction.");
+			// }
 		}
 
 		public void Rollback(GameContext context, Action effect)
@@ -66,6 +65,16 @@ namespace TowerDefence.Game.ActionHandler.Stat
 		public void RemoveEffect(in GameContext context, Action effect)
 		{
 			throw new System.NotImplementedException();
+		}
+
+		public void ApplyAction(in GameContext context, in TriggerContext trigger, IEntity Entity, Action effect)
+		{
+			throw new System.NotImplementedException();
+		}
+
+		public void RegisterCallbacks(IEntity entity, IEntityController controller)
+		{
+
 		}
 	}
 }

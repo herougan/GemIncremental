@@ -1,14 +1,9 @@
 using System;
 using System.Collections.Generic;
-using Util.Debug;
 using UnityEngine;
-using TowerDefence.Entity.Monster;
-using TowerDefence.Entity.Tower;
-using Random = UnityEngine.Random;
 using Util.Maths;
 using TowerDefence.Entity.Skills;
 using TowerDefence.Entity.Skills.Effects;
-using Action = System.Action;
 
 
 namespace TowerDefence.Entity
@@ -17,7 +12,7 @@ namespace TowerDefence.Entity
 	public class EntityManager : MonoBehaviour
 	{
 		#region Preamble
-#pragma warning disable UDR0001 // Domain Reload Analyzer
+		// #pragma warning disable UDR0001 // Domain Reload Analyzer
 		public static EntityManager Instance;
 		// public static PoolManager PoolManager;
 		// public List<BiomeData> BiomeSpawnData;
@@ -64,14 +59,14 @@ namespace TowerDefence.Entity
 
 		public void KillAll()
 		{
-			MonsterQueue.Clear();
-			LogManager.Instance.Log("All monsters cleared");
+			// MonsterQueue.Clear();
+			// LogManager.Instance.Log("All monsters cleared");
 
-			foreach (GameObject monsterObject in monsterObjects)
-			{
-				Destroy(monsterObject);
-			}
-			monsterObjects.Clear();
+			// foreach (GameObject monsterObject in monsterObjects)
+			// {
+			// 	Destroy(monsterObject);
+			// }
+			// monsterObjects.Clear();
 		}
 
 		/* ===== Enemietrix ===== */
@@ -162,17 +157,17 @@ namespace TowerDefence.Entity
 
 		public bool TrySpawn(double roundTime, Vector3 source, List<Vector3> path, float distance)
 		{
-			// Try to spawn the first Monster
-			if (MonsterQueue.Count > 0 && roundTime > MonsterQueue[0].spawnTime)
-			{
-				LogManager.Instance.Log($"{roundTime:F2}: {MonsterQueue[0].plan.name} spawned");
-				Monster monster = MonsterQueue[0];
-				Spawn(monster, source, path, distance);
-				MonsterQueue.RemoveAt(0);
-				// Play sound
-				// TowerDefenceMaster.Instance.PlaySound(ResourceAllocater.Instance.playerHurtSound);
-				return true;
-			}
+			// // Try to spawn the first Monster
+			// if (MonsterQueue.Count > 0 && roundTime > MonsterQueue[0].spawnTime)
+			// {
+			// 	LogManager.Instance.Log($"{roundTime:F2}: {MonsterQueue[0].plan.name} spawned");
+			// 	Monster monster = MonsterQueue[0];
+			// 	Spawn(monster, source, path, distance);
+			// 	MonsterQueue.RemoveAt(0);
+			// 	// Play sound
+			// 	// TowerDefenceMaster.Instance.PlaySound(ResourceAllocater.Instance.playerHurtSound);
+			// 	return true;
+			// }
 			return false;
 		}
 
@@ -180,24 +175,24 @@ namespace TowerDefence.Entity
 		private CountdownTimer RescaleTimer;
 		public void PeriodicRescale()
 		{
-			if (RescaleTimer == null)
-			{
-				RescaleTimer = new CountdownTimer(periodicRescaleTime);
-				RescaleTimer.TimerComplete += (() =>
-				{
-					foreach (Monster monster in MonsterQueue)
-					{
-						// Rescale monsters
-						monster.Scale();
-					}
-					LogManager.Instance.Log($"Monsters rescaled at {periodicRescaleTime:F2}s");
-				});
-			}
-			else
-			{
-				RescaleTimer.Reset();
-			}
-			RescaleTimer.Start();
+			// if (RescaleTimer == null)
+			// {
+			// 	RescaleTimer = new CountdownTimer(periodicRescaleTime);
+			// 	RescaleTimer.TimerComplete += (() =>
+			// 	{
+			// 		foreach (Monster monster in MonsterQueue)
+			// 		{
+			// 			// Rescale monsters
+			// 			monster.Scale();
+			// 		}
+			// 		LogManager.Instance.Log($"Monsters rescaled at {periodicRescaleTime:F2}s");
+			// 	});
+			// }
+			// else
+			// {
+			// 	RescaleTimer.Reset();
+			// }
+			// RescaleTimer.Start();
 		}
 
 		#endregion Wave Spawn
@@ -205,27 +200,27 @@ namespace TowerDefence.Entity
 		#region Events
 
 		// Overall
-		public event Action OnAllMonstersSpawned = delegate { };
-		public event Action OnAllMonstersSlayed = delegate { };
+		// public event Action OnAllMonstersSpawned = delegate { };
+		// public event Action OnAllMonstersSlayed = delegate { };
 
 		// Player
-		public event Action OnPlayerDeath = delegate { };
+		// public event Action OnPlayerDeath = delegate { };
 
 		// Tower
-		public event Action<Tower> OnTowerBuiltEvent = delegate { };
-		public event Action<Tower> OnTowerDestroyed = delegate { };
-		public event Action<Tower> OnTowerUpgraded = delegate { };
-		public event Action<Tower> OnTowerAttacked = delegate { };
-		public event Action<Tower> OnTowerPeriodicSkill = delegate { };
+		// public event Action<Tower> OnTowerBuiltEvent = delegate { };
+		// public event Action<Tower> OnTowerDestroyed = delegate { };
+		// public event Action<Tower> OnTowerUpgraded = delegate { };
+		// public event Action<Tower> OnTowerAttacked = delegate { };
+		// public event Action<Tower> OnTowerPeriodicSkill = delegate { };
 		// public event Action<Tower> OnTowerOnUltimaTrigger = delegate {};
 
 		// Monsters
 
-		public event Action<Monster> OnMonsterSpawned = delegate { };
-		public event Action<Monster> OnMonsterReached = delegate { };
-		public event Action<Monster, Tower> OnMonsterHit = delegate { };
-		public event Action<Monster> OnMonsterDied = delegate { };
-		public event Action<Monster> OnMonsterOnDeathEffect = delegate { };
+		// public event Action<Monster> OnMonsterSpawned = delegate { };
+		// public event Action<Monster> OnMonsterReached = delegate { };
+		// public event Action<Monster, Tower> OnMonsterHit = delegate { };
+		// public event Action<Monster> OnMonsterDied = delegate { };
+		// public event Action<Monster> OnMonsterOnDeathEffect = delegate { };
 
 		// During Game
 		// public void MonsterReached(Monster monster)
@@ -314,95 +309,95 @@ namespace TowerDefence.Entity
 
 		#endregion Events
 
-		#region Game Space
-		readonly GameObject monsterContainer;
-		readonly GameObject towerContainer;
-		readonly GameObject effectContainer;
-		readonly GameObject monsterPrefab;
-		readonly GameObject towerPrefab;
+		// #region Game Space
+		// readonly GameObject monsterContainer;
+		// readonly GameObject towerContainer;
+		// readonly GameObject effectContainer;
+		// readonly GameObject monsterPrefab;
+		// readonly GameObject towerPrefab;
 
-		void Spawn(Monster monster, Vector3 spawn, List<Vector3> path, float distance)
-		{
-			GameObject monsterObject = Instantiate(monsterPrefab, spawn, Quaternion.identity, monsterContainer.transform);
-			monsterObject.name = monster.plan.name;
-			monsterObject.GetComponent<MonsterController>().Init(monster);
-			monsterObject.GetComponent<MonsterController>().MoveCommand(path, distance);
-			monsterObjects.Add(monsterObject);
-		}
+		// void Spawn(Monster monster, Vector3 spawn, List<Vector3> path, float distance)
+		// {
+		// 	GameObject monsterObject = Instantiate(monsterPrefab, spawn, Quaternion.identity, monsterContainer.transform);
+		// 	monsterObject.name = monster.plan.name;
+		// 	monsterObject.GetComponent<MonsterController>().Init(monster);
+		// 	monsterObject.GetComponent<MonsterController>().MoveCommand(path, distance);
+		// 	monsterObjects.Add(monsterObject);
+		// }
 
-		public void Build(Player player, Tower.Type towerType, (int, int) coord, Vector3 spawn)
-		{
-			Build(player, new Tower(ResourceAllocater.Instance.TowerDict[Tower.Type.Ruby]), coord);
-		}
+		// public void Build(Player player, Tower.Type towerType, (int, int) coord, Vector3 spawn)
+		// {
+		// 	Build(player, new Tower(ResourceAllocater.Instance.TowerDict[Tower.Type.Ruby]), coord);
+		// }
 
-		public void Build(Player player, Tower tower, (int, int) coord)
-		{
-			// Build
-			tower.coord = coord;
-			GameObject towerObject = Instantiate(towerPrefab, MapManager.Instance.GetTilePosition(tower.coord), Quaternion.identity, towerContainer.transform);
-			towerObject.GetComponent<TowerController>().Init(player.ScaleTower(tower));
+		// public void Build(Player player, Tower tower, (int, int) coord)
+		// {
+		// 	// Build
+		// 	tower.coord = coord;
+		// 	GameObject towerObject = Instantiate(towerPrefab, MapManager.Instance.GetTilePosition(tower.coord), Quaternion.identity, towerContainer.transform);
+		// 	towerObject.GetComponent<TowerController>().Init(player.ScaleTower(tower));
 
-			// Register into players
-			player.towers.Add(tower);
-			// Add entities
-			towerObjects.Add(towerObject);
-		}
+		// 	// Register into players
+		// 	player.towers.Add(tower);
+		// 	// Add entities
+		// 	towerObjects.Add(towerObject);
+		// }
 
-		public void BuildFromPlayer(Player player)
-		{
-			foreach (Tower tower in player.towers)
-			{
-				Build(player, tower, tower.coord);
-			}
-		}
+		// public void BuildFromPlayer(Player player)
+		// {
+		// 	foreach (Tower tower in player.towers)
+		// 	{
+		// 		Build(player, tower, tower.coord);
+		// 	}
+		// }
 
-		public bool IsBuilt((int, int) coord)
-		{
-			foreach (GameObject towerObject in towerObjects)
-			{
-				if (towerObject.GetComponent<TowerController>().tower.coord == coord)
-				{
-					return true;
-				}
-			}
+		// public bool IsBuilt((int, int) coord)
+		// {
+		// 	foreach (GameObject towerObject in towerObjects)
+		// 	{
+		// 		if (towerObject.GetComponent<TowerController>().tower.coord == coord)
+		// 		{
+		// 			return true;
+		// 		}
+		// 	}
 
-			return false;
-		}
+		// 	return false;
+		// }
 
-		public Tower GetTower((int, int) coord)
-		{
-			foreach (GameObject towerObject in towerObjects)
-			{
-				if (towerObject.GetComponent<TowerController>().tower.coord == coord)
-				{
-					return towerObject.GetComponent<TowerController>().tower;
-				}
-			}
+		// public Tower GetTower((int, int) coord)
+		// {
+		// 	foreach (GameObject towerObject in towerObjects)
+		// 	{
+		// 		if (towerObject.GetComponent<TowerController>().tower.coord == coord)
+		// 		{
+		// 			return towerObject.GetComponent<TowerController>().tower;
+		// 		}
+		// 	}
 
-			return null;
-		}
+		// 	return null;
+		// }
 
-		public GameObject GetTowerObject((int, int) coord)
-		{
-			foreach (GameObject towerObject in towerObjects)
-			{
-				if (towerObject.GetComponent<TowerController>().tower.coord == coord)
-				{
-					return towerObject;
-				}
-			}
+		// public GameObject GetTowerObject((int, int) coord)
+		// {
+		// 	foreach (GameObject towerObject in towerObjects)
+		// 	{
+		// 		if (towerObject.GetComponent<TowerController>().tower.coord == coord)
+		// 		{
+		// 			return towerObject;
+		// 		}
+		// 	}
 
-			return null;
-		}
+		// 	return null;
+		// }
 
-		public void Display(VfxType VfxType, Vector3 spawn, float time = 10.0f)
-		{
-			GameObject effect = Instantiate(ResourceAllocater.Instance.EffectDict[VfxType], spawn, Quaternion.identity, effectContainer.transform);
-			effect.name = $"{VfxType} effect";
-			Destroy(effect, time);
-		}
+		// public void Display(VfxType VfxType, Vector3 spawn, float time = 10.0f)
+		// {
+		// 	GameObject effect = Instantiate(ResourceAllocater.Instance.EffectDict[VfxType], spawn, Quaternion.identity, effectContainer.transform);
+		// 	effect.name = $"{VfxType} effect";
+		// 	Destroy(effect, time);
+		// }
 
-		#endregion Game Space
+		// #endregion Game Space
 	}
 
 }

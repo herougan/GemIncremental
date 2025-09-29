@@ -1,6 +1,8 @@
+using TowerDefence.Entity.Behaviour;
 using TowerDefence.Entity.Items;
 using TowerDefence.Entity.Resources;
 using TowerDefence.Entity.Skills.Buffs;
+using TowerDefence.Entity.Token;
 using TowerDefence.Stats;
 using Util.Maths;
 
@@ -28,7 +30,8 @@ namespace TowerDefence.Entity.Skills
 		Kinematics,
 		Mileage,
 		Resource,
-		Counter,
+		Token, // Specific, e.g. +1 Wild Gem token
+		Counter, // Generic e.g. +1
 		Status,
 		EntityInventory,
 		Behaviour,
@@ -100,11 +103,11 @@ namespace TowerDefence.Entity.Skills
 	public class ResourceCondition : Condition
 	{
 		public ResourceType ResourceType { get; private set; }
-		public double RequiredAmount { get; private set; }
+		public ddouble RequiredAmount { get; private set; }
 		public MathOperation Comparative { get; private set; }
 		public override ConditionType ConditionType => ConditionType.Resource;
 
-		public ResourceCondition(ResourceType resourceType, double requiredAmount, MathOperation comparative) : base(ConditionType.Resource)
+		public ResourceCondition(ResourceType resourceType, ddouble requiredAmount, MathOperation comparative) : base(ConditionType.Resource)
 		{
 			ResourceType = resourceType;
 			RequiredAmount = requiredAmount;
@@ -112,16 +115,16 @@ namespace TowerDefence.Entity.Skills
 		}
 	}
 
-	public class CounterCondition : Condition
+	public class TokenCondition : Condition
 	{
-		public CounterType CounterType { get; private set; }
+		public TokenType TokenType { get; private set; }
 		public int RequiredCount { get; private set; }
 		public MathOperation Comparative { get; private set; }
-		public override ConditionType ConditionType => ConditionType.Counter;
+		public override ConditionType ConditionType => ConditionType.Token;
 
-		public CounterCondition(CounterType counterType, int requiredCount, MathOperation comparative) : base(ConditionType.Counter)
+		public TokenCondition(TokenType tokenType, int requiredCount, MathOperation comparative) : base(ConditionType.Token)
 		{
-			CounterType = counterType;
+			TokenType = tokenType;
 			RequiredCount = requiredCount;
 			Comparative = comparative;
 		}

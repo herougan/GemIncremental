@@ -96,6 +96,10 @@ namespace TowerDefence.Entity.Token
 			}
 		}
 
+		public void RegisterCallbacks()
+		{
+		}
+
 		#endregion Preamble
 
 		#region Method

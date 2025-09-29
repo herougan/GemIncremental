@@ -7,6 +7,7 @@ namespace TowerDefence.Context
 	public interface ITriggerContext : IContext
 	{
 		TriggerType TriggerType { get; }
+		List<IEntity> Targets { get; }
 	}
 
 	public interface IPeriodicTriggerContext : ITriggerContext
@@ -36,5 +37,7 @@ namespace TowerDefence.Context
 	public class TriggerContext : ITriggerContext
 	{
 		public TriggerType TriggerType => throw new System.NotImplementedException();
+
+		public List<IEntity> Targets => throw new System.NotImplementedException();
 	}
 }
