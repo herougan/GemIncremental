@@ -7,9 +7,9 @@ namespace TowerDefence.Entity.Skills.Effects
 	{
 		ActionType Type { get; }
 
-		void ApplyAction(in GameContext context, in TriggerContext trigger, IEntity Entity, Action effect);
-		void Rollback(in GameContext context, Action effect);
-		void RemoveEffect(in GameContext context, Action effect);
+		void ApplyAction(in GameContext context, in TriggerContext trigger, IEntity Entity, IAction effect);
+		void Rollback(in GameContext context, IAction effect);
+		void RemoveEffect(in GameContext context, IAction effect);
 	}
 
 	public class ActionHandler : IActionHandler
@@ -20,7 +20,7 @@ namespace TowerDefence.Entity.Skills.Effects
 		{
 		}
 
-		public virtual void ApplyAction(in GameContext context, in TriggerContext trigger, IEntity Entity, Action effect)
+		public virtual void ApplyAction(in GameContext context, in TriggerContext trigger, IEntity Entity, IAction effect)
 		{
 			// Default implementation does nothing
 		}
@@ -30,14 +30,14 @@ namespace TowerDefence.Entity.Skills.Effects
 		/// </summary>
 		/// <param name="context"></param>
 		/// <param name="effect"></param>
-		public virtual void Rollback(in GameContext context, Action effect)
+		public virtual void Rollback(in GameContext context, IAction effect)
 		{
 			// Default implementation does nothing
 
 			// Most actions cannot be rolledback.
 		}
 
-		public virtual void RemoveEffect(in GameContext context, Action effect)
+		public virtual void RemoveEffect(in GameContext context, IAction effect)
 		{
 			// Default implementation does nothing
 		}

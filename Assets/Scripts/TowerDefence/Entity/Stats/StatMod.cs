@@ -30,7 +30,7 @@ namespace TowerDefence.Stats
 			Value = value;
 			StatType = statType;
 			Operation = op;
-			IsPositive = (value > 0) * MathsLib.IsPositive(op) /*? 1 : 0*/;
+			IsPositive = (value > 0) && MathsLib.IsPositive(op) /*? 1 : 0*/;
 		}
 	}
 }

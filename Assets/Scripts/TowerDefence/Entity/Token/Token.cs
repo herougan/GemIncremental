@@ -98,6 +98,17 @@ namespace TowerDefence.Entity.Token
 
 		public void RegisterCallbacks()
 		{
+			// Reset
+			OnTokenChanged = null;
+			OnTokenTransmute = null;
+			OnTokenExchange = null;
+			OnNewToken = null;
+
+			// Add
+			foreach (var token in Things)
+			{
+				token.OnTokenChanged += (t, n) => OnTokenChanged?.Invoke(t, n);
+			}
 		}
 
 		#endregion Preamble

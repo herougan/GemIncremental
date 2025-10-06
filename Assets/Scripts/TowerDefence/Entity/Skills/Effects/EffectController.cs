@@ -19,20 +19,20 @@ namespace TowerDefence.Entity.Skills.ActionHandler
 			return null;
 		}
 
-		public static void ApplyAction(GameContext context, TriggerContext trigger, IEntity Entity, Effect effect)
+		public static void ApplyAction(TriggerContext trigger, IEntity Entity, Effect effect)
 		{
 			foreach (Action action in effect.Actions)
 			{
-				ApplyAction(context, trigger, Entity, action);
+				ApplyAction(GameManager.instance.GameContext, trigger, Entity, action);
 			}
 		}
 
-		public static void ApplyAction(GameContext context, TriggerContext trigger, IEntity Entity, Action action)
+		public static void ApplyAction(TriggerContext trigger, IEntity Entity, Action action)
 		{
 			ActionHandlers.TryGetValue(action.ActionType, out var handler);
 			if (handler != null)
 			{
-				handler.ApplyAction(context, trigger, Entity, action);
+				handler.ApplyAction(GameManager.instance.GameContext, trigger, Entity, action);
 			}
 			else
 			{

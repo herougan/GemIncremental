@@ -9,14 +9,15 @@ namespace TowerDefence.Entity.Skills
 {
 	public interface ISkill : ISource
 	{
-		// Info]
-		public SkillPlan Plan { get; }
+		// Info
+		SkillPlan Plan { get; }
+		bool IsPositive { get; }
 
 		// Data
 		public ddouble Scale { get; }
 
 		// State
-		public List<CountdownTimer> Timers { get; }
+		List<CountdownTimer> Timers { get; }
 
 		// ===== Init =====
 		// public void SetSelfInit();

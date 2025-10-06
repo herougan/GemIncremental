@@ -17,17 +17,24 @@ namespace Util.Maths
 
 
 		// Timer events
-		public event Action TimerComplete = delegate { };
+		public Action<CountdownTimer> OnRing;
 
-		public CountdownTimer(float countdownTime)
+		public CountdownTimer(float countdownTime, bool periodic = false)
 		{
 			this.countdownTime = countdownTime;
+			this.Periodic = periodic;
 		}
 
-		public CountdownTimer(float countdownTime, Action timerComplete)
+		public CountdownTimer(float countdownTime, Action onRing)
 		{
 			this.countdownTime = countdownTime;
-			TimerComplete += timerComplete;
+			OnRing += (timer) => onRing();
+		}
+
+		public CountdownTimer(float countdownTime, Action<CountdownTimer> onRing)
+		{
+			this.countdownTime = countdownTime;
+			OnRing += onRing;
 		}
 
 		public CountdownTimer SetPeriodic()
@@ -76,7 +83,7 @@ namespace Util.Maths
 		{
 			if (Periodic) Reset();
 			else Complete();
-			TimerComplete.Invoke();
+			OnRing.Invoke(this);
 		}
 
 		/// <summary>
@@ -97,7 +104,7 @@ namespace Util.Maths
 			else if (currentTime <= 0)
 			{
 				// Invoke event
-				TimerComplete.Invoke();
+				OnRing.Invoke(this);
 
 				// Reset the timer if periodic
 				if (Periodic) Reset();
@@ -113,8 +120,7 @@ namespace Util.Maths
 	{
 		#region Preamble
 		public List<CountdownTimer> timers = new List<CountdownTimer>();
-		public event Action<int> TimerComplete = delegate { };
-		private int rung;
+		public event Action<CountdownCollection, CountdownTimer> OnRing;
 
 		public CountdownCollection(List<float> countdownTimes)
 		{
@@ -139,7 +145,7 @@ namespace Util.Maths
 		public void AddTimer(float countdownTime)
 		{
 			timers.Add(new CountdownTimer(countdownTime));
-			timers[timers.Count - 1].TimerComplete += OnRing;
+			timers[timers.Count - 1].OnRing += (CountdownTimer timer) => OnRing.Invoke(this, timer);
 		}
 
 		public void Tick(float time)
@@ -156,11 +162,6 @@ namespace Util.Maths
 			{
 				timer.Reset();
 			}
-		}
-
-		void OnRing()
-		{
-			TimerComplete.Invoke(rung);
 		}
 		#endregion Timer
 	}

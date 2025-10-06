@@ -15,7 +15,7 @@ using UnityEngine;
 using TowerDefence.Entity.Skills.Effects;
 using TowerDefence.Context;
 using TowerDefence.Entity.Behaviour;
-using TowerDefence.Entity.Skills.ActionHandler;
+using Util.Events;
 
 namespace TowerDefence.Entity
 {
@@ -66,59 +66,101 @@ namespace TowerDefence.Entity
 		// View in StatBlock
 
 		// = State =
-		// Generic 
-		public event Action<IEntity, IExpirable> OnBuffApplied;
-		public event Action<IEntity, IExpirable> OnDebuffApplied;
-		public event Action<IEntity, IExpirable> OnBuffExpired;
-		public event Action<IEntity, IExpirable> OnDebuffExpired;
-		public event Action<IEntity, IExpirable> OnBuffStacked;
 
 		// Fusion Event
 		// public event Action<IEntity, IExpirable, IExpirable, IEffectInteraction> OnBuffFused;
 
 		// Game Space
-		public event Action<IEntity> OnReached;
-		public event Action<IEntity> OnSpawn;
-		public event Action<IEntity> OnPushBack;
-		public event Action<IEntity> OnHidden;
+		public event Action<TriggerContext> OnReached;
+		public event Action<TriggerContext> OnSpawn;
+		public event Action<TriggerContext> OnPushBack;
+		public event Action<TriggerContext> OnHidden;
 
 		// Behaviour
-		public event Action<IEntity> OnFirstHurt;
-		public event Action<IEntity> OnFirstBuff;
-		public event Action<IEntity> OnTargetted;
-		public event Action<IEntity> OnUntargetted;
-		public event Action<IEntity> OnSpellCast;
+		public event Action<TriggerContext> OnFirstHurt;
+		public event Action<TriggerContext> OnFirstBuff;
+		public event Action<TriggerContext> OnTargetted;
+		public event Action<TriggerContext> OnUntargetted;
+		public event Action<TriggerContext> OnCast;
 
 		// Allies
-		public event Action<IEntity, IEntity> OnAllySpawn;
-		public event Action<IEntity, IEntity> OnAllyDeath;
-		public event Action<IEntity, IEntity> OnAllyHurt;
-		public event Action<IEntity, IEntity> OnAllyHeal;
-		public event Action<IEntity, IEntity> OnAllyBuff;
-		public event Action<IEntity, IEntity, IExpirable> OnAllyStatus;
+		public event Action<TriggerContext> OnAllySpawn;
+		public event Action<TriggerContext> OnAllyDeath;
+		public event Action<TriggerContext> OnAllyHurt;
+		public event Action<TriggerContext> OnAllyHeal;
+		public event Action<TriggerContext> OnAllyBuff;
+		public event Action<TriggerContext> OnAllyStatus;
 
 		// = Range =
 		// On Ally/On Enemy/On Tagged - Particular treatment handled within e.g. OnIsolation from "Piano" enemies
-		public event Action<IEntity, IEntity> OnEnteredRange; // From, To
-		public event Action<IEntity, IEntity> OnExitRange; // From, To
-		public event Action<IEntity, IEntity> OnEnteredAttackRange;// From (this), To
-		public event Action<IEntity, IEntity> OnExitAttackRange; // From, To
-		public event Action<IEntity, IEntity> OnIsolated; // Leaving
-		public event Action<IEntity, IEntity> OnNotIsolated; // Entering
+		public event Action<TriggerContext> OnEnteredRange; // From, To
+		public event Action<TriggerContext> OnExitRange; // From, To
+		public event Action<TriggerContext> OnEnteredAttackRange;// From (this), To
+		public event Action<TriggerContext> OnExitAttackRange; // From, To
+		public event Action<TriggerContext> OnIsolated; // Leaving
+		public event Action<TriggerContext> OnNotIsolated; // Entering
 
 		// Combat
-		public event Action<IEntity, IEntity> OnAttack; // Attacker, Target
-		public event Action<IEntity, IEntity> OnHit; // On normal attack by enemy (Typically tower-monster)
-		public event Action<IEntity, ISource> OnDOT; // On Damage over time tick (Skill/Expirable)
-		public event Action<IEntity, ISource> OnDeath; // If Health <= 0
-		public event Action<IEntity, ISource> OnHurt;
-		public event Action<IEntity, ISource> OnHeal; // If Health > 0
-		public event Action<IEntity, ISource> OnVamp;
-		public event Action<IEntity, IStat> OnBloodied;
-		public event Action<IEntity, IStat> OnDying;
-		public event Action<IEntity, IStat> OnRage;
-		public event Action<IEntity, IStat> OnManaDry;
-		public event Action<IEntity> OnRest;
+		public event Action<TriggerContext> OnAttack;
+		public event Action<TriggerContext> OnAttacked; // Upon being hit by an enemy with a normal attack
+		public event Action<TriggerContext> OnHit; // On hitting an enemy with a normal attack
+		public event Action<TriggerContext> OnDOT; // On Damage over time tick (Skill/Expirable)
+		public event Action<TriggerContext> OnDeath; // If Health <= 0
+		public event Action<TriggerContext> OnKill; // Kills another
+		public event Action<TriggerContext> OnHurt;
+		public event Action<TriggerContext> OnHeal; // If Health > 0
+		public event Action<TriggerContext> OnVamp;
+		public event Action<TriggerContext> OnBloodied;
+		public event Action<TriggerContext> OnDying;
+		public event Action<TriggerContext> OnRage;
+		public event Action<TriggerContext> OnManaDry;
+
+		// Stat
+		public event Action<TriggerContext> OnValueChanged;
+		public event Action<TriggerContext> OnValueDecreased;
+		public event Action<TriggerContext> OnValueIncreased;
+		public event Action<TriggerContext> OnMaxValueChanged;
+		public event Action<TriggerContext> OnCurrentValueDecreased;
+		public event Action<TriggerContext> OnCurrentValueIncreased;
+		public event Action<TriggerContext> OnStatBonusAdded;
+		public event Action<TriggerContext> OnStatNerfAdded;
+		public event Action<TriggerContext> OnRegenerate;
+		public event Action<TriggerContext> OnRest;
+		public event Action<TriggerContext> OnRegenValueChanged;
+		public event Action<TriggerContext> OnRegenRateChanged;
+		//
+		public event Action<TriggerContext> OnStatusResistChanged;
+		public event Action<TriggerContext> OnStatusMasteryChanged;
+		public event Action<TriggerContext> OnThresholdCrossed;
+		public event Action<TriggerContext> OnThresholdChanged;
+
+		// == Resource ==
+		public event Action<TriggerContext> OnResourceIncreased;
+		public event Action<TriggerContext> OnResourceDecreased;
+
+		// == Element ==
+		public event Action<TriggerContext> OnEleResistChanged;
+		public event Action<TriggerContext> OnEleMasteryChanged;
+
+		// == Token ==
+		public event Action<TriggerContext> OnTokenChanged;
+		public event Action<TriggerContext> OnTokenTransmute;
+		public event Action<TriggerContext> OnTokenExchange;
+		public event Action<TriggerContext> OnNewToken;
+
+		// == Buffs == 
+		public event Action<TriggerContext> OnBuffApplied;
+		public event Action<TriggerContext> OnDebuffApplied;
+		public event Action<TriggerContext> OnBuffRemoved;
+		public event Action<TriggerContext> OnDebuffCleansed;
+		public event Action<TriggerContext> OnBuffExpired;
+		public event Action<TriggerContext> OnDebuffExpired;
+		public event Action<TriggerContext> OnBuffStacked;
+
+		// == Mileage ==
+		// public event Action<TriggerContext> OnMileageIncreased;
+		// Trigger.Parameter > Limit -> Invoke();
+
 
 		// Register Callbacks()
 		void RegisterCallbacks();
@@ -129,10 +171,9 @@ namespace TowerDefence.Entity
 		void RegisterSkillCallbacks();
 
 		// === Trigger Hooks ===
-
-		public Action<TriggerContext, IEntity, ISkill, IEffect> GetEvent(TriggerType triggerType);
-
-		public void SubscribeEvent(TriggerType type, Delegate _delegate);
+		public List<WrappedAction> WrappedActions { get; }
+		public Action<TriggerContext> GetEvent(TriggerType triggerType);
+		public void SubscribeEvent(TriggerType type, Action<TriggerContext> _delegate);
 
 		#endregion Events
 
@@ -144,6 +185,9 @@ namespace TowerDefence.Entity
 		public void Tick(float t);
 		public void Die();
 		public void Attack(); // move attack timer
+
+		// ===== Timer related =====
+		public CountdownTimer AddTimer(float duration, bool repeat = false, Action<CountdownTimer> callback = null);
 
 		#endregion Lifecycle
 
@@ -238,64 +282,100 @@ namespace TowerDefence.Entity
 		#endregion Abilities
 
 		#region Events
-		// ===== Stat =====
-		// View in StatBlock
 
 		// = State =
-		// Generic 
-		public event Action<IEntity, IExpirable> OnBuffApplied = delegate { };
-		public event Action<IEntity, IExpirable> OnDebuffApplied = delegate { };
-		public event Action<IEntity, IExpirable> OnBuffExpired = delegate { };
-		public event Action<IEntity, IExpirable> OnDebuffExpired = delegate { };
-		public event Action<IEntity, IExpirable> OnBuffStacked = delegate { };
+		// Game Space  // *Self*
+		public event Action<TriggerContext> OnReached = delegate { };
+		public event Action<TriggerContext> OnSpawn = delegate { };
+		public event Action<TriggerContext> OnPushBack = delegate { };
+		public event Action<TriggerContext> OnHidden = delegate { };
 
-		// Fusion Event
-		// public event Action<IEntity, IExpirable, IExpirable, IEffectInteraction> OnBuffFused = delegate { };
+		// Behaviour  // *Self*
+		public event Action<TriggerContext> OnFirstHurt = delegate { };
+		public event Action<TriggerContext> OnFirstBuff = delegate { };
+		public event Action<TriggerContext> OnTargetted = delegate { };
+		public event Action<TriggerContext> OnUntargetted = delegate { };
+		public event Action<TriggerContext> OnCast = delegate { };
 
-		// Game Space
-		public event Action<IEntity> OnReached = delegate { };
-		public event Action<IEntity> OnSpawn = delegate { };
-		public event Action<IEntity> OnPushBack = delegate { };
-		public event Action<IEntity> OnHidden = delegate { };
+		// Allies  // *Self*
+		public event Action<TriggerContext> OnAllySpawn = delegate { };
+		public event Action<TriggerContext> OnAllyDeath = delegate { };
+		public event Action<TriggerContext> OnAllyHurt = delegate { };
+		public event Action<TriggerContext> OnAllyHeal = delegate { };
+		public event Action<TriggerContext> OnAllyBuff = delegate { };
+		public event Action<TriggerContext> OnAllyStatus = delegate { };
 
-		// Behaviour
-		public event Action<IEntity> OnFirstHurt = delegate { };
-		public event Action<IEntity> OnFirstBuff = delegate { };
-		public event Action<IEntity> OnTargetted = delegate { };
-		public event Action<IEntity> OnUntargetted = delegate { };
-		public event Action<IEntity> OnSpellCast = delegate { };
+		// Range  // *Self*
+		public event Action<TriggerContext> OnEnteredRange = delegate { }; // From, To
+		public event Action<TriggerContext> OnExitRange = delegate { }; // From, To
+		public event Action<TriggerContext> OnEnteredAttackRange = delegate { };// From (this), To
+		public event Action<TriggerContext> OnExitAttackRange = delegate { }; // From, To
+		public event Action<TriggerContext> OnIsolated = delegate { };
+		public event Action<TriggerContext> OnNotIsolated = delegate { };
 
-		// Allies
-		public event Action<IEntity, IEntity> OnAllySpawn = delegate { };
-		public event Action<IEntity, IEntity> OnAllyDeath = delegate { };
-		public event Action<IEntity, IEntity> OnAllyHurt = delegate { };
-		public event Action<IEntity, IEntity> OnAllyHeal = delegate { };
-		public event Action<IEntity, IEntity> OnAllyBuff = delegate { };
-		public event Action<IEntity, IEntity, IExpirable> OnAllyStatus = delegate { };
+		// Combat  // *Self*
+		public event Action<TriggerContext> OnAttack = delegate { };
+		public event Action<TriggerContext> OnAttacked = delegate { };
+		public event Action<TriggerContext> OnHit = delegate { };
+		public event Action<TriggerContext> OnDOT = delegate { };
+		public event Action<TriggerContext> OnDeath = delegate { }; // If Health <= 0; Dier, Source (Killer)
+		public event Action<TriggerContext> OnKill = delegate { };
+		public event Action<TriggerContext> OnHurt = delegate { };
+		public event Action<TriggerContext> OnHeal = delegate { }; // If Health > 0
+		public event Action<TriggerContext> OnVamp = delegate { };
+		public event Action<TriggerContext> OnBloodied = delegate { };
+		public event Action<TriggerContext> OnDying = delegate { };
+		public event Action<TriggerContext> OnRage = delegate { };
+		public event Action<TriggerContext> OnManaDry = delegate { };
 
-		// Range
-		public event Action<IEntity, IEntity> OnEnteredRange = delegate { }; // From, To
-		public event Action<IEntity, IEntity> OnExitRange = delegate { }; // From, To
-		public event Action<IEntity, IEntity> OnEnteredAttackRange = delegate { };// From (this), To
-		public event Action<IEntity, IEntity> OnExitAttackRange = delegate { }; // From, To
-		public event Action<IEntity, IEntity> OnIsolated = delegate { };
-		public event Action<IEntity, IEntity> OnNotIsolated = delegate { };
+		// === Stat Block ===
+		public event Action<TriggerContext> OnValueChanged = delegate { };
+		public event Action<TriggerContext> OnValueDecreased = delegate { };
+		public event Action<TriggerContext> OnValueIncreased = delegate { };
+		//
+		public event Action<TriggerContext> OnMaxValueChanged = delegate { };
+		public event Action<TriggerContext> OnCurrentValueDecreased = delegate { };
+		public event Action<TriggerContext> OnCurrentValueIncreased = delegate { };
+		//
+		public event Action<TriggerContext> OnStatBonusAdded = delegate { };
+		public event Action<TriggerContext> OnStatNerfAdded = delegate { };
+		//
+		public event Action<TriggerContext> OnRegenerate = delegate { };
+		public event Action<TriggerContext> OnRest = delegate { };
+		public event Action<TriggerContext> OnRegenValueChanged = delegate { };
+		public event Action<TriggerContext> OnRegenRateChanged = delegate { };
+		//
+		public event Action<TriggerContext> OnStatusResistChanged = delegate { };
+		public event Action<TriggerContext> OnStatusMasteryChanged = delegate { };
+		public event Action<TriggerContext> OnThresholdCrossed = delegate { };
+		public event Action<TriggerContext> OnThresholdChanged = delegate { };
 
-		// Combat
-		public event Action<IEntity, IEntity> OnAttack = delegate { };
-		public event Action<IEntity, IEntity> OnHit = delegate { };
-		public event Action<IEntity, ISource> OnDOT = delegate { };
-		public event Action<IEntity, ISource> OnDeath = delegate { }; // If Health <= 0; Dier, Source (Killer)
-		public event Action<IEntity, ISource> OnHurt = delegate { };
-		public event Action<IEntity, ISource> OnHeal = delegate { }; // If Health > 0
-		public event Action<IEntity, ISource> OnVamp = delegate { };
-		public event Action<IEntity, IStat> OnBloodied = delegate { };
-		public event Action<IEntity, IStat> OnDying = delegate { };
-		public event Action<IEntity, IStat> OnRage = delegate { };
-		public event Action<IEntity, IStat> OnManaDry = delegate { };
-		public event Action<IEntity> OnRest = delegate { };
+		// == Resource ==
+		public event Action<TriggerContext> OnResourceIncreased = delegate { };
+		public event Action<TriggerContext> OnResourceDecreased = delegate { };
+
+		// == Element ==
+		public event Action<TriggerContext> OnEleResistChanged = delegate { };
+		public event Action<TriggerContext> OnEleMasteryChanged = delegate { };
+
+		// == Token ==
+		public event Action<TriggerContext> OnTokenChanged = delegate { };
+		public event Action<TriggerContext> OnTokenTransmute = delegate { };
+		public event Action<TriggerContext> OnTokenExchange = delegate { };
+		public event Action<TriggerContext> OnNewToken = delegate { };
+
+		// == Buffs ==  // *Self*
+		public event Action<TriggerContext> OnBuffApplied = delegate { };
+		public event Action<TriggerContext> OnDebuffApplied = delegate { };
+		public event Action<TriggerContext> OnBuffRemoved = delegate { };
+		public event Action<TriggerContext> OnDebuffCleansed = delegate { };
+		public event Action<TriggerContext> OnBuffExpired = delegate { };
+		public event Action<TriggerContext> OnDebuffExpired = delegate { };
+		public event Action<TriggerContext> OnBuffStacked = delegate { };
+
 
 		// === Register Callbacks ===
+		public List<WrappedAction> WrappedActions { get; }
 		public void RegisterCallbacks()
 		{
 			RegisterStatCallbacks();
@@ -305,22 +385,195 @@ namespace TowerDefence.Entity
 		}
 		public void RegisterStatCallbacks()
 		{
+			// Register Stats callbacks to itself
 			StatBlock.RegisterCallbacks();
+
+			// Register StatBlock's callbacks to this entity
+			StatBlock.OnValueChanged += (s, v) => OnValueChanged.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnValueChanged,
+				Entity = this,
+				Stat = s,
+				Value = v,
+			});
+			StatBlock.OnValueDecreased += (s, v) => OnValueDecreased.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnValueDecreased,
+				Entity = this,
+				Stat = s,
+				Value = v,
+			});
+			StatBlock.OnValueIncreased += (s, v) => OnValueIncreased.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnValueIncreased,
+				Entity = this,
+				Stat = s,
+				Value = v,
+			});
+			StatBlock.OnMaxValueChanged += (s, v) => OnMaxValueChanged.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnMaxValueChanged,
+				Entity = this,
+				Stat = s,
+				Value = v,
+			});
+			StatBlock.OnCurrentValueDecreased += (s, v) => OnCurrentValueDecreased.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnCurrentValueDecreased,
+				Entity = this,
+				Stat = s,
+				Value = v,
+			});
+			StatBlock.OnCurrentValueIncreased += (s, v) => OnCurrentValueIncreased.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnCurrentValueIncreased,
+				Entity = this,
+				Stat = s,
+				Value = v,
+			});
+			StatBlock.OnStatBonusAdded += (s, m) => OnStatBonusAdded.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnStatBonusAdded,
+				Entity = this,
+				Stat = s,
+				Mod = m,
+			});
+			StatBlock.OnStatNerfAdded += (s, m) => OnStatNerfAdded.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnStatNerfAdded,
+				Entity = this,
+				Stat = s,
+				Mod = m,
+			});
+			StatBlock.OnRegenerate += (s, v) => OnRegenerate.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnRegenerate,
+				Entity = this,
+				Stat = s,
+				Value = v,
+			});
+			StatBlock.OnRest += (s, v) => OnRest.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnRest,
+				Entity = this,
+				Stat = s,
+				Value = v,
+			});
+			StatBlock.OnRegenValueChanged += (s, v) => OnRegenValueChanged.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnRegenValueChanged,
+				Entity = this,
+				Stat = s,
+				Value = v,
+			});
+			StatBlock.OnRegenRateChanged += (s, v) => OnRegenRateChanged.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnRegenRateChanged,
+				Entity = this,
+				Stat = s,
+				Value = v,
+			});
+			StatBlock.OnResistChanged += (s, v) => OnStatusResistChanged.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnStatusResistChanged,
+				Entity = this,
+				Stat = s,
+				Value = v,
+			});
+			StatBlock.OnMasteryChanged += (s, v) => OnStatusMasteryChanged.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnStatusMasteryChanged,
+				Entity = this,
+				Stat = s,
+				Value = v,
+			});
+			StatBlock.OnThresholdCrossed += (s, v) => OnThresholdCrossed.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnThresholdCrossed,
+				Entity = this,
+				Stat = s,
+				Value = v,
+			});
+			StatBlock.OnThresholdChanged += (s, v) => OnThresholdChanged.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnThresholdChanged,
+				Entity = this,
+				Stat = s,
+				Value = v,
+			});
 		}
 		public void RegisterResourceCallbacks()
 		{
 			ResourceBlock.RegisterCallbacks();
+			ResourceBlock.OnResourceIncreased += (r, v) => OnResourceIncreased.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnResourceIncreased,
+				Entity = this,
+				Resource = r,
+				Value = v,
+			});
+			ResourceBlock.OnResourceDecreased += (r, v) => OnResourceDecreased.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnResourceDecreased,
+				Entity = this,
+				Resource = r,
+				Value = v,
+			});
 		}
 		public void RegisterTokenCallbacks()
 		{
 			TokenInventory.RegisterCallbacks();
+			TokenInventory.OnTokenChanged += (t, v) => OnTokenChanged.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnTokenChanged,
+				Entity = this,
+				Token = t,
+				Value = v,
+			});
+			TokenInventory.OnTokenTransmute += (f, t, v) => OnTokenTransmute.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnTokenTransmute,
+				Entity = this,
+				Token = f,
+				NewToken = t,
+				Value = v,
+			});
+			TokenInventory.OnTokenExchange += (f, t) => OnTokenExchange.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnTokenExchange,
+				Entity = this,
+				Token = f,
+				NewToken = t,
+			});
+			TokenInventory.OnNewToken += (t) => OnNewToken.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnNewToken,
+				Entity = this,
+				Token = t,
+			});
 		}
 		public void RegisterElementCallbacks()
 		{
 			ElementBlock.RegisterCallbacks();
+			ElementBlock.OnResistChanged += (e, v) => OnEleResistChanged.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnEleResistChanged,
+				Entity = this,
+				Element = e,
+				Value = v,
+			});
+			ElementBlock.OnMasteryChanged += (e, v) => OnEleMasteryChanged.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnEleMasteryChanged,
+				Entity = this,
+				Element = e,
+				Value = v,
+			});
+
 		}
 		public void RegisterSkillCallbacks()
 		{
+			// Unused unless skill callbacks were reset and need to be re-wired
 			foreach (var skill in Skills)
 			{
 				RegisterSkillCallback(skill);
@@ -332,7 +585,7 @@ namespace TowerDefence.Entity
 		}
 
 		// === Register/Deregister Single ===
-		public void RegisterStatCallback()
+		public void RegisterStatCallback(IStat stat)
 		{
 
 		}
@@ -383,7 +636,6 @@ namespace TowerDefence.Entity
 
 
 		}
-
 		public void DeregisterSkillCallback(ISkill skill)
 		{
 			// skill.OnSkillUsed -= EffectController.Instance.ResolveSkill;
@@ -393,39 +645,32 @@ namespace TowerDefence.Entity
 		}
 
 		// ===== Trigger Hooks =====
-		public List<Action<TriggerContext, IEntity, ISkill, IEffect>> EffectActivations = new();
-		public void CreateEffectActivation()
-		{
-			EffectActivations.Add((context, source, skill, effect) =>
-			{
-				EffectController.ApplyAction(context, source, skill, effect);
-			});
-		}
-		public Action<TriggerContext, IEntity, ISkill, IEffect> GetEvent(TriggerType triggerType)
+		public Action<TriggerContext> GetEvent(TriggerType triggerType)
 		{
 			switch (triggerType)
 			{
-				case TriggerType.Attack:
-					return OnAttack;
-				case TriggerType.Hit:
-					return OnHit;
-				case TriggerType.Death:
-					return OnDeath;
-				case TriggerType.Hurt:
-					return OnHurt;
-				case TriggerType.Heal:
-					return OnHeal;
-				case TriggerType.DOT:
-					return OnDOT;
+				case TriggerType.OnCast:
+					return OnCast;
+				// Hi, please return all Entity Action<TriggerContext> based on TriggerType
+				case TriggerType.OnPeriodic:
+					LogManager.Instance.LogWarning($"Trigger type {triggerType} call is ambiguous");
+					return null;
 				default:
 					LogManager.Instance.LogWarning($"Trigger type {triggerType} not implemented in GetEvent");
 					return null;
 			}
 		}
 
-		public void SubscribeEvent(TriggerType type, Delegate _delegate)
+		/// <summary>
+		/// Raw hook for an Action<TriggerContext> to an Entity's events
+		/// </summary>
+		/// <param name="type"></param>
+		/// <param name="_delegate"></param>
+		public void SubscribeEvent(TriggerType type, Action<TriggerContext> _delegate)
 		{
-			GetEvent(type) += () => _delegate;
+			Action<TriggerContext> action = GetEvent(type);
+			action += _delegate;
+
 		}
 
 		#endregion Events
@@ -440,7 +685,6 @@ namespace TowerDefence.Entity
 			{
 				ApplyBuff(new Buff(buffPlan));
 			}
-			OnSpawn?.Invoke(this);
 
 			// Get starting tokens
 			foreach (var token in Plan.StartingTokens)
@@ -455,7 +699,11 @@ namespace TowerDefence.Entity
 			}
 
 			// Events
-			OnSpawn?.Invoke(this);
+			OnSpawn?.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnSpawn,
+				Entity = this,
+			});
 		}
 
 		public void Regenerate()
@@ -478,7 +726,11 @@ namespace TowerDefence.Entity
 					regStat.Rest();
 				}
 			}
-			OnRest?.Invoke(this);
+			OnRest?.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnRest,
+				Entity = this,
+			});
 		}
 
 		public void Tick(float t)
@@ -489,13 +741,33 @@ namespace TowerDefence.Entity
 
 		public void Die()
 		{
-			OnDeath?.Invoke(this, null);
+			OnDeath?.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnDeath,
+				Entity = this,
+			});
 		}
 
 		public void Attack()
 		{
-			OnAttack?.Invoke(this, null);
+			OnAttack?.Invoke(new TriggerContext()
+			{
+				TriggerType = TriggerType.OnAttack,
+				Entity = this,
+			});
 		}
+
+		public CountdownTimer AddTimer(float duration, bool repeat = false, Action<TriggerContext> callback = null, ISkill skill = null)
+		{
+			CountdownTimer timer = new CountdownTimer(duration, repeat);
+			if (callback != null)
+			{
+				WrappedAction wrapped = new WrappedAction(timer.OnRing, callback, skill, TriggerType.OnPeriodic);
+			}
+
+			return timer;
+		}
+
 		#endregion Lifecycle
 
 		#region Methods
@@ -562,13 +834,23 @@ namespace TowerDefence.Entity
 				// Stack buff
 				var existing = Buffs.First(b => b.BuffType == buff.BuffType);
 				existing.Stack(buff);
-				OnBuffStacked?.Invoke(this, existing);
+				OnBuffStacked?.Invoke(new TriggerContext()
+				{
+					TriggerType = TriggerType.OnBuffStacked,
+					Entity = this,
+					Expirable = existing,
+				});
 			}
 			else
 			{
 				// Add buff
 				Buffs.Add(buff);
-				OnBuffApplied?.Invoke(this, buff);
+				OnBuffApplied?.Invoke(new TriggerContext()
+				{
+					TriggerType = TriggerType.OnBuffApplied,
+					Entity = this,
+					Expirable = buff,
+				});
 			}
 		}
 
@@ -579,7 +861,19 @@ namespace TowerDefence.Entity
 				// Remove
 				var existing = Buffs.First(b => b.BuffType == buff.BuffType);
 				Buffs.Remove(existing);
-				OnBuffExpired?.Invoke(this, existing);
+				if (existing.IsPositive)
+					OnBuffExpired?.Invoke(new TriggerContext()
+					{
+						TriggerType = TriggerType.OnBuffExpired,
+						Entity = this,
+						Expirable = existing,
+					});
+				else OnDebuffCleansed?.Invoke(new TriggerContext()
+				{
+					TriggerType = TriggerType.OnDebuffCleansed,
+					Entity = this,
+					Expirable = existing,
+				});
 			}
 			else
 			{

@@ -10,9 +10,9 @@ namespace TowerDefence.Entity.Skills.Effects.Types.Stat
 		public void ApplyAction(GameContext context, Action effect)
 		{
 			// Default implementation for applying effects
-			TriggerContext triggerContext = context.GetTriggerContext(effect.Trigger);
-			IEntity entity = triggerContext.Target;
-			entity.GetStat(effect.StatType).OperateValue(effect.Value, effect.Operation);
+			// TriggerContext triggerContext = context.GetTriggerContext(effect.Trigger);
+			// IEntity entity = triggerContext.Target;
+			// entity.GetStat(effect.StatType).OperateValue(effect.Value, effect.Operation);
 
 
 		}
@@ -42,6 +42,26 @@ namespace TowerDefence.Entity.Skills.Effects.Types.Stat
 		}
 
 		public void RemoveEffect(in GameContext context, Action effect)
+		{
+			throw new System.NotImplementedException();
+		}
+
+		public void ApplyAction(in GameContext context, in TriggerContext trigger, IEntity Entity, Action effect)
+		{
+			throw new System.NotImplementedException();
+		}
+
+		public void ApplyAction(in GameContext context, in TriggerContext trigger, IEntity Entity, IAction effect)
+		{
+			throw new System.NotImplementedException();
+		}
+
+		public void Rollback(in GameContext context, IAction effect)
+		{
+			throw new System.NotImplementedException();
+		}
+
+		public void RemoveEffect(in GameContext context, IAction effect)
 		{
 			throw new System.NotImplementedException();
 		}

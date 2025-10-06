@@ -138,8 +138,8 @@ namespace TowerDefence.Stats
 		public ddouble Current { get; }
 		public void SetMax(ddouble value);
 		public void Deplete(ddouble value);
-		public event Action<IStat, ddouble> OnCurrentValueDecreased;
-		public event Action<IStat, ddouble> OnCurrentValueIncreased;
+		public event Action<IDepletable, ddouble> OnCurrentValueDecreased;
+		public event Action<IDepletable, ddouble> OnCurrentValueIncreased;
 	}
 
 	[Serializable]
@@ -179,8 +179,8 @@ namespace TowerDefence.Stats
 		[SerializeField] protected ddouble _Current;
 
 		// Events
-		public event Action<IStat, ddouble> OnCurrentValueDecreased = delegate { };
-		public event Action<IStat, ddouble> OnCurrentValueIncreased = delegate { };
+		public event Action<IDepletable, ddouble> OnCurrentValueDecreased = delegate { };
+		public event Action<IDepletable, ddouble> OnCurrentValueIncreased = delegate { };
 
 		// Constructor
 		public DepletableStat(StatType statType, ddouble value, ddouble current) : base(statType, value)
@@ -208,10 +208,10 @@ namespace TowerDefence.Stats
 		public ddouble Regeneration { get; }
 		public float Rate { get; }
 		//
-		public event Action<IStat, ddouble> OnRegenerate;
-		public event Action<IStat, ddouble> OnRest;
-		public event Action<IStat, ddouble> OnRegenValueChanged;
-		public event Action<IStat, float> OnRegenRateChanged;
+		public event Action<IRegenerable, ddouble> OnRegenerate;
+		public event Action<IRegenerable, ddouble> OnRest;
+		public event Action<IRegenerable, ddouble> OnRegenValueChanged;
+		public event Action<IRegenerable, float> OnRegenRateChanged;
 		//
 		public void Regenerate();
 		public void Rest(); // Regenerates faster, and greater; at least 1 point if 0
@@ -251,10 +251,10 @@ namespace TowerDefence.Stats
 		[FormerlySerializedAs("Rate")]
 		[SerializeField] protected float _Rate;
 
-		public event Action<IStat, ddouble> OnRegenerate = delegate { };
-		public event Action<IStat, ddouble> OnRest = delegate { };
-		public event Action<IStat, ddouble> OnRegenValueChanged = delegate { };
-		public event Action<IStat, float> OnRegenRateChanged = delegate { };
+		public event Action<IRegenerable, ddouble> OnRegenerate = delegate { };
+		public event Action<IRegenerable, ddouble> OnRest = delegate { };
+		public event Action<IRegenerable, ddouble> OnRegenValueChanged = delegate { };
+		public event Action<IRegenerable, float> OnRegenRateChanged = delegate { };
 
 
 		// Constructor
@@ -549,20 +549,24 @@ namespace TowerDefence.Stats
 		public event Action<IStat, ddouble> OnValueDecreased = delegate { };
 		public event Action<IStat, ddouble> OnValueIncreased = delegate { };
 		// Depletable
-		public event Action<IStat, ddouble> OnMaxValueChanged = delegate { };
-		public event Action<IStat, ddouble> OnCurrentValueDecreased = delegate { };
-		public event Action<IStat, ddouble> OnCurrentValueIncreased = delegate { };
+		public event Action<IDepletable, ddouble> OnMaxValueChanged = delegate { };
+		public event Action<IDepletable, ddouble> OnCurrentValueDecreased = delegate { };
+		public event Action<IDepletable, ddouble> OnCurrentValueIncreased = delegate { };
 		// Bonus
 		public event Action<IStat, IStatMod> OnStatBonusAdded = delegate { };
 		public event Action<IStat, IStatMod> OnStatNerfAdded = delegate { };
 		// Regenerable
-		public event Action<IStat, ddouble> OnRegenerate = delegate { };
-		public event Action<IStat, ddouble> OnRest = delegate { };
-		public event Action<IStat, ddouble> OnRegenValueChanged = delegate { };
-		public event Action<IStat, ddouble> OnRegenRateChanged = delegate { };
+		public event Action<IRegenerable, ddouble> OnRegenerate = delegate { };
+		public event Action<IRegenerable, ddouble> OnRest = delegate { };
+		public event Action<IRegenerable, ddouble> OnRegenValueChanged = delegate { };
+		public event Action<IRegenerable, ddouble> OnRegenRateChanged = delegate { };
 
 		// Resist
-		public event Action<StatusType, ddouble> OnResistIncreased = delegate { };
+		public event Action<IResistance, ddouble> OnResistChanged;
+		public event Action<IResistance, ddouble> OnMasteryChanged;
+		public event Action<IResistance, ddouble> OnThresholdCrossed;
+		public event Action<IResistance, ddouble> OnThresholdChanged;
+
 		// Element
 		// public event Action<ElementType, ddouble> OnElementExplosion = delegate { };
 		// public event Action<ElementType, ddouble> OnElementSynergy = delegate { };
@@ -579,18 +583,30 @@ namespace TowerDefence.Stats
 				};
 				if (stat is IDepletable depletable)
 				{
-					depletable.OnValueChanged += (s, v) => OnMaxValueChanged?.Invoke(s, v); // On Val change triggers On Max Val change
+					depletable.OnValueChanged += (s, v) => OnMaxValueChanged?.Invoke((IDepletable)s, v); // Value = MaxValue, CurrentValue = Current
+					depletable.OnCurrentValueDecreased += (s, v) => OnCurrentValueDecreased?.Invoke(s, v);
+					depletable.OnCurrentValueIncreased += (s, v) => OnCurrentValueIncreased?.Invoke(s, v);
 				}
 				if (stat is IRegenerable regenerable)
 				{
 					regenerable.OnRegenerate += (s, v) => OnRegenerate?.Invoke(s, v);
 					regenerable.OnRest += (s, v) => OnRest?.Invoke(s, v);
 					regenerable.OnRegenValueChanged += (s, v) => OnRegenValueChanged?.Invoke(s, v);
-					regenerable.OnCurrentValueDecreased += (s, v) => OnCurrentValueDecreased?.Invoke(s, v);
-					regenerable.OnCurrentValueIncreased += (s, v) => OnCurrentValueIncreased?.Invoke(s, v);
 					regenerable.OnRegenRateChanged += (s, v) => { OnRegenRateChanged?.Invoke(s, v); };
 				}
 			}
+			foreach (IResistance resistance in Resistances)
+			{
+				RegisterResistanceCallbacks(resistance);
+			}
+		}
+
+		public void RegisterResistanceCallbacks(IResistance resistance)
+		{
+			resistance.OnResistChanged += (r, v) => OnResistChanged?.Invoke(r, v);
+			resistance.OnMasteryChanged += (r, v) => OnMasteryChanged?.Invoke(r, v);
+			resistance.OnThresholdCrossed += (r, v) => OnThresholdCrossed?.Invoke(r, v);
+			resistance.OnThresholdChanged += (r, v) => OnThresholdChanged?.Invoke(r, v);
 		}
 
 		#endregion Events
@@ -792,10 +808,10 @@ namespace TowerDefence.Stats
 			StatMap.Remove(stat.StatType);
 		}
 
-		public void AddResistance(StatusType statusType, ddouble value)
+		public void AddNewResistance(StatusType statusType, ddouble value)
 		{
-			OnResistIncreased?.Invoke(statusType, value);
 			Resistances.Add(new Resistance(statusType, value));
+			RegisterResistanceCallbacks(Resistances.Last());
 		}
 
 		public void AddResistance(Resistance resistance)
@@ -812,7 +828,7 @@ namespace TowerDefence.Stats
 			// Create resistance
 			else
 			{
-				AddResistance(resistance.Status, resistance.Value);
+				AddNewResistance(resistance.Status, resistance.Value);
 			}
 		}
 

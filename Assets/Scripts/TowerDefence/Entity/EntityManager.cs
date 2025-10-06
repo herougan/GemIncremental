@@ -4,6 +4,8 @@ using UnityEngine;
 using Util.Maths;
 using TowerDefence.Entity.Skills;
 using TowerDefence.Entity.Skills.Effects;
+using Util.Events;
+using TowerDefence.Entity.Skills.ActionHandler;
 
 
 namespace TowerDefence.Entity
@@ -249,63 +251,86 @@ namespace TowerDefence.Entity
 		// 	OnMonsterDied.Invoke(monster);
 		// }
 
-		void RegisterEntityCallbacks(IEntity entity)
+		static void RegisterEntityCallbacks(IEntity entity)
 		{
-
+			entity.RegisterCallbacks();
+			RegisterInitSkills(entity);
 		}
 
-		void RegisterInitSkills(IEntity entity)
+		static void RegisterInitSkills(IEntity entity)
 		{
-			foreach (ISkill skill in entity.Skills)
+			foreach (ISkill skill in entity.Plan.InitSkills)
 			{
-				RegisterEntitySkill(entity, skill);
+				RegisterSkill(entity, skill);
 			}
 		}
 
-		void RegisterEntitySkill(IEntity entity, ISkill skill)
+		static void RegisterSkill(IEntity entity, ISkill skill)
 		{
 			foreach (IEffect effect in skill.Plan.Effects)
 			{
-				RegisterEntityEffect(entity, effect);
+				RegisterEffect(entity, effect, skill);
 			}
 		}
 
-		void RegisterEntityEffect(IEntity entity, IEffect effect)
+		static void RegisterEffect(IEntity entity, IEffect effect, ISkill skill)
 		{
-			List<IAction> actions = effect.Actions;
 			foreach (ITrigger trigger in effect.Triggers)
 			{
-				// Register to entity
-				entity.GetEvent(trigger.Type) += (context, source, skill, eff) =>
-				{
-					// Check conditions
-					foreach (ICondition condition in effect.Conditions)
-					{
-						if (!condition.Check(context, source, skill, eff)) return;
-					}
-					foreach (ICondition targetCondition in effect.TargetConditions)
-					{
-						if (!targetCondition.Check(context, source, skill, eff)) return;
-					}
-
-					//
-					foreach (IAction action in actions)
-					{
-						action.Execute(context, source, skill, eff);
-					}
-				};
+				RegisterTrigger(entity, trigger, effect, skill);
 			}
 		}
 
-		// void RegisterMonsterCallbacks(Monster monster)
-		// {
+		static void RegisterTrigger(IEntity entity, ITrigger trigger, IEffect effect, ISkill skill)
+		{
+			// TODO
+			// Get event
+			entity.GetEvent(trigger.TriggerType);
+			Action<object[]> triggeringEvent;
+			if (trigger.Type == TriggerType.OnPeriodic)
+			{
+				CountdownTimer timer = entity.CreateTimer(trigger.Parameter);
+				triggeringEvent = timer.OnRing + (entity);
+			}
+			else if (trigger.Type == TriggerType.OnValueChanged)
+			{
+				//
+				triggeringEvent = entity.GetEvent(trigger.Type);
+				// Insert the entity as the first argument in args
+				WrappedAction wrapped = DelegateAdapter.Wrap(
+					triggeringEvent,
+					(object[] args) =>
+					{
+						var newArgs = new object[args.Length + 1];
+						newArgs[0] = entity;
+						Array.Copy(args, 0, newArgs, 1, args.Length);
+						EffectController.ApplyEffect(newArgs, entity, effect);
+					},
+					skill
+				);
+			}
+			else triggeringEvent = entity.GetEvent(trigger.Type);
 
-		// }
+			WrappedAction wrapped = DelegateAdapter.Wrap(triggeringEvent, (object[] args) => EffectController.ApplyEffect(args, entity, effect), skill);
+			triggeringEvent += wrapped.Invoke;
+		}
 
-		// void RegisterTowerCallbacks(Tower tower)
-		// {
+		static void DeregisterSkill(IEntity entity, ISkill skill)
+		{
+			foreach (WrappedAction wrapped in entity.WrappedActions)
+			{
+				if (wrapped.Ref == skill)
+				{
+					DeregisterWrappedAction(entity, wrapped);
+				}
+			}
+		}
 
-		// }
+		static void DeregisterWrappedAction(IEntity entity, WrappedAction wrapped)
+		{
+			wrapped.Trigger -= wrapped.Invoke;
+			entity.WrappedActions.Remove(wrapped);
+		}
 
 		#endregion Events
 

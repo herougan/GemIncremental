@@ -1,0 +1,4 @@
+1. Test cases to check for Skills with inappropriate Triggers
+2. Maths works as expected
+- Qualitative (Holy things heal)
+- Quantitative (Exact value calculations)

@@ -12,10 +12,12 @@ namespace TowerDefence.Entity.Skills.Buffs
 	{
 		public StatusType Status { get; }
 		public ddouble Resist { get; set; }
+		public ddouble Mastery { get; set; }
 		public ddouble Threshold { get; set; }
-		public event Action<IStat, ddouble> OnResistChanged;
-		public event Action<IStat, ddouble> OnThresholdCrossed;
-		public event Action<IStat, ddouble> OnThresholdChanged;
+		public event Action<IResistance, ddouble> OnResistChanged;
+		public event Action<IResistance, ddouble> OnMasteryChanged;
+		public event Action<IResistance, ddouble> OnThresholdCrossed;
+		public event Action<IResistance, ddouble> OnThresholdChanged;
 	}
 
 	[Serializable]
@@ -35,6 +37,18 @@ namespace TowerDefence.Entity.Skills.Buffs
 			{
 				if (_Resist != value) OnResistChanged?.Invoke(this, value);
 				_Resist = value;
+			}
+		}
+
+		[FormerlySerializedAs("Mastery")]
+		[SerializeField] private ddouble _Mastery;
+		public ddouble Mastery
+		{
+			get { return _Mastery; }
+			set
+			{
+				if (_Mastery != value) OnMasteryChanged?.Invoke(this, value);
+				_Mastery = value;
 			}
 		}
 
@@ -70,9 +84,10 @@ namespace TowerDefence.Entity.Skills.Buffs
 		// 		throw new NotImplementedException();
 		// 	}
 		// }
-		public event Action<IStat, ddouble> OnResistChanged;
-		public event Action<IStat, ddouble> OnThresholdCrossed;
-		public event Action<IStat, ddouble> OnThresholdChanged;
+		public event Action<IResistance, ddouble> OnResistChanged;
+		public event Action<IResistance, ddouble> OnMasteryChanged;
+		public event Action<IResistance, ddouble> OnThresholdCrossed;
+		public event Action<IResistance, ddouble> OnThresholdChanged;
 
 		// ===== Methods =====
 

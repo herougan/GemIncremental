@@ -27,7 +27,6 @@ namespace TowerDefence.Entity.Skills.Buffs
 		// Methods
 		public void Stack(IBuff buff);
 		public void Stack(float duration, int rank, float value, IBuff buff);
-		public void Tick(float t);
 	}
 
 	public enum BuffType
