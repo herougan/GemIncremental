@@ -20,6 +20,19 @@ namespace TowerDefence.Entity.Skills
 			Type = type;
 			Parameter = parameter;
 		}
+
+		public static bool IsStatTrigger(TriggerType type)
+		{
+			return type is TriggerType.OnValueChanged or TriggerType.OnValueDecreased or TriggerType.OnValueIncreased
+				or TriggerType.OnMaxValueChanged or TriggerType.OnCurrentValueDecreased or TriggerType.OnCurrentValueIncreased
+				or TriggerType.OnStatBonusAdded or TriggerType.OnStatNerfAdded
+				or TriggerType.OnRegenerate or TriggerType.OnRegenValueChanged or TriggerType.OnRegenRateChanged;
+		}
+
+		public static bool IsGameTrigger(TriggerType type)
+		{
+			return false;
+		}
 	}
 
 	public enum TriggerType
@@ -52,7 +65,8 @@ namespace TowerDefence.Entity.Skills
 		OnNotIsolated,
 		//
 		OnAttack,
-		Onhit,
+		OnHit,
+		OnAttacked,
 		OnDOT,
 		OnDeath,
 		OnKill,

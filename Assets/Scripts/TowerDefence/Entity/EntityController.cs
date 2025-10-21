@@ -7,6 +7,9 @@ namespace TowerDefence.Entity
 
 	public class EntityController : IEntityController
 	{
-
+		public void RegisterCallbacks(IEntity entity)
+		{
+			throw new System.NotImplementedException();
+		}
 	}
 }

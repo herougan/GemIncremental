@@ -16,6 +16,7 @@ using TowerDefence.Entity.Skills.Effects;
 using TowerDefence.Context;
 using TowerDefence.Entity.Behaviour;
 using Util.Events;
+using TowerDefence.Entity.Skills.ActionHandler;
 
 namespace TowerDefence.Entity
 {
@@ -187,7 +188,11 @@ namespace TowerDefence.Entity
 		public void Attack(); // move attack timer
 
 		// ===== Timer related =====
-		public CountdownTimer AddTimer(float duration, bool repeat = false, Action<CountdownTimer> callback = null);
+		public CountdownTimer AddTimer(float duration, bool repeat = false, Action<TriggerContext> callback = null, ISkill skill = null);
+
+		public void AddTimer(CountdownTimer timer);
+
+		public void RemoveTimer(CountdownTimer timer);
 
 		#endregion Lifecycle
 
@@ -621,20 +626,24 @@ namespace TowerDefence.Entity
 		{
 			foreach (IEffect effect in skill.Plan.Effects)
 			{
-				RegisterEffectCallback(effect);
+				RegisterEffectCallback(effect, skill);
 			}
 		}
-		public void RegisterEffectCallback(IEffect effect)
+		public void RegisterEffectCallback(IEffect effect, ISkill skill)
 		{
-			foreach (var trigger in effect.Triggers)
+			foreach (ITrigger trigger in effect.Triggers)
 			{
-				RegisterTriggerCallback(trigger, effect.Actions);
+				Action<TriggerContext> triggerEvent = GetEvent(trigger.Type);
+				RegisterTriggerCallback(triggerEvent, trigger, effect.Actions, skill);
 			}
 		}
-		public void RegisterTriggerCallback(ITrigger trigger, List<IAction> actions)
+		public void RegisterTriggerCallback(Action<TriggerContext> triggerEvent, ITrigger trigger, List<IAction> actions, ISkill skill)
 		{
-
-
+			foreach (IAction action in actions)
+			{
+				WrappedAction wrapped = new WrappedAction(triggerEvent, ctx => EffectController.ApplyAction(ctx, this, action), skill, trigger.Type);
+				WrappedActions.Add(wrapped);
+			}
 		}
 		public void DeregisterSkillCallback(ISkill skill)
 		{
@@ -670,7 +679,6 @@ namespace TowerDefence.Entity
 		{
 			Action<TriggerContext> action = GetEvent(type);
 			action += _delegate;
-
 		}
 
 		#endregion Events
@@ -757,15 +765,27 @@ namespace TowerDefence.Entity
 			});
 		}
 
+		List<CountdownTimer> countdownTimers = new();
 		public CountdownTimer AddTimer(float duration, bool repeat = false, Action<TriggerContext> callback = null, ISkill skill = null)
 		{
 			CountdownTimer timer = new CountdownTimer(duration, repeat);
-			if (callback != null)
-			{
-				WrappedAction wrapped = new WrappedAction(timer.OnRing, callback, skill, TriggerType.OnPeriodic);
-			}
+			// if (callback != null)
+			// {
+			// 	WrappedAction wrapped = new WrappedAction(timer.OnRing, callback, skill);
+			// 	WrappedActions.Add(wrapped);
+			// }
 
 			return timer;
+		}
+
+		public void AddTimer(CountdownTimer timer)
+		{
+
+		}
+
+		public void RemoveTimer(CountdownTimer timer)
+		{
+			//...
 		}
 
 		#endregion Lifecycle

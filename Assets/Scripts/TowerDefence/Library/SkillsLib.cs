@@ -65,6 +65,7 @@ namespace TowerDefence.Library
 		private static BuffStackType FireTypeStacking = new BuffStackType(MathOperation.Max, MathOperation.Max, MathOperation.Add);
 		private static BuffStackType PoisonTypeStacking = new BuffStackType(MathOperation.Add, MathOperation.Max, MathOperation.Max);
 		private static BuffStackType DelibilitatingTypeStacking = new BuffStackType(MathOperation.Max, MathOperation.Max, MathOperation.Max);
+		private static BuffStackType DiseaseTypeStacking = new BuffStackType(MathOperation.Nothing, MathOperation.Add, MathOperation.Max);
 
 		#endregion Data
 

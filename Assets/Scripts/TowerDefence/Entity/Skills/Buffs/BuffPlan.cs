@@ -51,11 +51,6 @@ namespace TowerDefence.Entity.Skills.Buffs
 			// Draw hidden components based on the TriggerType
 			switch (TriggerType)
 			{
-				case TriggerType.None:
-
-					break;
-				case TriggerType.Permanent:
-					break;
 				case TriggerType.OnCast:
 
 					break;
@@ -78,20 +73,18 @@ namespace TowerDefence.Entity.Skills.Buffs
 				case TriggerType.OnPeriodic:
 					break;
 
-				case TriggerType.OnEnterRange:
+				case TriggerType.OnEnteredRange:
 					break;
 
 				case TriggerType.OnExitRange:
 					break;
 
-				// case TriggerType.OnStatusIn:
-				// 	break;
+					// case TriggerType.OnStatusIn:
+					// 	break;
 
-				// case TriggerType.OnStatusOut:
-				// 	break;
+					// case TriggerType.OnStatusOut:
+					// 	break;
 
-				case TriggerType.OnSkillUse:
-					break;
 
 					// case TriggerType.OnSkillUse:
 					// 	break;

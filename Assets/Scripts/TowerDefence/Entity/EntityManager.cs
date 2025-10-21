@@ -6,6 +6,7 @@ using TowerDefence.Entity.Skills;
 using TowerDefence.Entity.Skills.Effects;
 using Util.Events;
 using TowerDefence.Entity.Skills.ActionHandler;
+using TowerDefence.Context;
 
 
 namespace TowerDefence.Entity
@@ -202,8 +203,8 @@ namespace TowerDefence.Entity
 		#region Events
 
 		// Overall
-		// public event Action OnAllMonstersSpawned = delegate { };
-		// public event Action OnAllMonstersSlayed = delegate { };
+		// public event Action OnAllyMonstersSpawned = delegate { };
+		// public event Action OnAllyMonstersSlayed = delegate { };
 
 		// Player
 		// public event Action OnPlayerDeath = delegate { };
@@ -283,36 +284,39 @@ namespace TowerDefence.Entity
 
 		static void RegisterTrigger(IEntity entity, ITrigger trigger, IEffect effect, ISkill skill)
 		{
-			// TODO
 			// Get event
-			entity.GetEvent(trigger.TriggerType);
-			Action<object[]> triggeringEvent;
+			Action<TriggerContext> triggeringEvent;
+			WrappedAction wrapped;
 			if (trigger.Type == TriggerType.OnPeriodic)
 			{
-				CountdownTimer timer = entity.CreateTimer(trigger.Parameter);
-				triggeringEvent = timer.OnRing + (entity);
+				CountdownTimer timer = new CountdownTimer(trigger.Parameter);
+				entity.AddTimer(timer);
+				// CountdownTimer timer = entity.AddTimer(trigger.Parameter, true, (ctx) => EffectController.ApplyAction(ctx, entity, effect), skill);
+				wrapped = new WrappedAction(timer.OnRing, ctx => EffectController.ApplyAction(ctx, entity, effect), skill);
+				entity.WrappedActions.Add(wrapped);
+				return;
 			}
-			else if (trigger.Type == TriggerType.OnValueChanged)
+			else if (Trigger.IsStatTrigger(trigger.Type))
 			{
 				//
 				triggeringEvent = entity.GetEvent(trigger.Type);
-				// Insert the entity as the first argument in args
-				WrappedAction wrapped = DelegateAdapter.Wrap(
-					triggeringEvent,
-					(object[] args) =>
-					{
-						var newArgs = new object[args.Length + 1];
-						newArgs[0] = entity;
-						Array.Copy(args, 0, newArgs, 1, args.Length);
-						EffectController.ApplyEffect(newArgs, entity, effect);
-					},
-					skill
-				);
+				wrapped = new WrappedAction(triggeringEvent, ctx => EffectController.ApplyAction(ctx, entity, effect), skill, trigger.Type);
+				entity.WrappedActions.Add(wrapped);
+				return;
 			}
-			else triggeringEvent = entity.GetEvent(trigger.Type);
-
-			WrappedAction wrapped = DelegateAdapter.Wrap(triggeringEvent, (object[] args) => EffectController.ApplyEffect(args, entity, effect), skill);
-			triggeringEvent += wrapped.Invoke;
+			else if (Trigger.IsGameTrigger(trigger.Type))
+			{
+				// Game event
+				// triggeringEvent = GameManager.Instance.GetGameEvent(trigger.Type);
+				// wrapped = new WrappedAction(triggeringEvent, ctx => EffectController.ApplyAction(ctx, entity, effect), skill, trigger.Type);
+			}
+			else
+			{
+				triggeringEvent = entity.GetEvent(trigger.Type);
+				wrapped = new WrappedAction(triggeringEvent, ctx => EffectController.ApplyAction(ctx, entity, effect), skill, trigger.Type);
+				entity.WrappedActions.Add(wrapped);
+				return;
+			}
 		}
 
 		static void DeregisterSkill(IEntity entity, ISkill skill)
@@ -328,7 +332,7 @@ namespace TowerDefence.Entity
 
 		static void DeregisterWrappedAction(IEntity entity, WrappedAction wrapped)
 		{
-			wrapped.Trigger -= wrapped.Invoke;
+			wrapped.Detach();
 			entity.WrappedActions.Remove(wrapped);
 		}
 

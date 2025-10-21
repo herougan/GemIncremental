@@ -110,7 +110,15 @@ namespace Util.Maths
 				case MathOperation.Min:
 					return Mathf.Min((float)a, (float)b);
 				case MathOperation.Equal:
-					return b;
+					return a == b ? 1 : 0;
+				case MathOperation.NotEqual:
+					return a != b ? 1 : 0;
+				case MathOperation.Greater:
+					return a > b ? 1 : 0;
+				case MathOperation.Lesser:
+					return a < b ? 1 : 0;
+				case MathOperation.Nothing:
+					return a; // b does nothing happens to a.
 				default:
 					throw new System.Exception("Invalid operation");
 			}

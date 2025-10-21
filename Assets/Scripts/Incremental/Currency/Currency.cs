@@ -1,3 +1,5 @@
+using System;
+
 namespace Incremental.Currency
 {
 	/// <summary>
