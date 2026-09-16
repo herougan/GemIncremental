@@ -47,6 +47,8 @@ namespace TowerDefence.Stats
 		/// <param name="scale">The factor by which to scale the stat value.</param>
 		public void Recalculate(ddouble scale);
 		public void AddScale(ddouble scale);
+		public void SetScale(ddouble scale);
+		public void AddValue(ddouble value);
 		public void SetValue(ddouble value);
 	}
 
@@ -91,12 +93,22 @@ namespace TowerDefence.Stats
 
 		public void AddScale(ddouble scale)
 		{
-			Value *= scale;
+			Value = (scale + this.Scale) * Base;
 		}
 
 		public void SetValue(ddouble value)
 		{
 			Value = value;
+		}
+
+		public void SetScale(ddouble scale)
+		{
+			Value = scale * Base;
+		}
+
+		public void AddValue(ddouble value)
+		{
+			Value += value;
 		}
 
 		/// <summary>
@@ -107,6 +119,12 @@ namespace TowerDefence.Stats
 		public Stat(StatType statType, ddouble value = default(ddouble))
 		{
 			StatType = statType;
+			// Both, not just Value - a freshly-constructed stat has no mods yet, so Base and Value start
+			// equal. Without this, GetBase(type) silently returned 0 for every stat instead of what it
+			// was actually constructed with - a real bug that would have broken EntityManager's spawn-
+			// time wave scaling and every IStatMod recompute (both read Base as the "no mods applied"
+			// starting point) the moment either touched a stat that hadn't already gone through it.
+			Base = value;
 			Value = value;
 		}
 
@@ -328,6 +346,107 @@ namespace TowerDefence.Stats
 		}
 	}
 
+	public interface IResistance : IStat
+	{
+		public StatusType Status { get; }
+		public ddouble Resist { get; set; }
+		public ddouble Mastery { get; set; }
+		public ddouble Threshold { get; set; }
+		public event Action<IResistance, ddouble> OnResistChanged;
+		public event Action<IResistance, ddouble> OnMasteryChanged;
+		public event Action<IResistance, ddouble> OnThresholdCrossed;
+		public event Action<IResistance, ddouble> OnThresholdChanged;
+	}
+
+	[Serializable]
+	public class Resistance : Stat, IResistance
+	{
+		// Cooky hack (see IStat)
+		[FormerlySerializedAs("Status")]
+		[SerializeField] private StatusType _Status;
+		public StatusType Status { get { return _Status; } set { _Status = value; } }
+
+		[FormerlySerializedAs("Resist")]
+		[SerializeField] private ddouble _Resist;
+		public ddouble Resist
+		{
+			get { return _Resist; }
+			set
+			{
+				if (_Resist != value) OnResistChanged?.Invoke(this, value);
+				_Resist = value;
+			}
+		}
+
+		[FormerlySerializedAs("Mastery")]
+		[SerializeField] private ddouble _Mastery;
+		public ddouble Mastery
+		{
+			get { return _Mastery; }
+			set
+			{
+				if (_Mastery != value) OnMasteryChanged?.Invoke(this, value);
+				_Mastery = value;
+			}
+		}
+
+		[FormerlySerializedAs("Threshold")]
+		[SerializeField] private ddouble _Threshold;
+		public ddouble Threshold
+		{
+			get { return _Threshold; }
+			set
+			{
+				if (_Threshold != value) OnThresholdChanged?.Invoke(this, value);
+				_Threshold = value;
+			}
+		}
+
+		public Resistance(StatusType status, ddouble value = default(ddouble), ddouble resist = default(ddouble), ddouble threshold = default(ddouble)) : base(StatType.Status, value)
+		{
+			Status = status;
+			Value = value;
+			Resist = resist;
+			Threshold = threshold;
+		}
+
+		// event Action<IStat, ddouble> IStat.OnValueChanged
+		// {
+		// 	add
+		// 	{
+		// 		throw new NotImplementedException();
+		// 	}
+
+		// 	remove
+		// 	{
+		// 		throw new NotImplementedException();
+		// 	}
+		// }
+		public event Action<IResistance, ddouble> OnResistChanged;
+		public event Action<IResistance, ddouble> OnMasteryChanged;
+		public event Action<IResistance, ddouble> OnThresholdCrossed;
+		public event Action<IResistance, ddouble> OnThresholdChanged;
+
+		// ===== Methods =====
+
+		public void AddStatus(ddouble amount)
+		{
+			if (amount <= 0) return;
+			Value += amount * (1 - Resist);
+			//
+			if (Value >= Threshold)
+			{
+				OnThresholdCrossed?.Invoke(this, Value);
+				Reset();
+			}
+		}
+
+		public void Reset()
+		{
+			Value = 0;
+		}
+	}
+
 	#endregion Interfaces & Classes
 
 	#region Enums
@@ -343,6 +462,10 @@ namespace TowerDefence.Stats
 		MagicResist,
 		Shield,
 		Energy,
+		// Promoted to stats (not the Passives/Skill system) specifically so they get a depletable "bar"
+		// like Health/Shield's - see ApplyDamage's absorb order (Nullifier -> Shield -> Health).
+		DamageNullifier, // absorbs incoming Physical damage
+		SpellNullifier,  // absorbs incoming Magical damage
 		// Defensive
 		ArmourHealth,
 		ArmourDefence,
@@ -429,6 +552,33 @@ namespace TowerDefence.Stats
 
 	#endregion Enums
 
+	#region Plan Data
+
+	/// <summary>
+	/// Design-time entry so a Plan (MonsterPlan/TowerPlan) can hand StatBlock a sparse list of starting
+	/// stats without StatMap itself (a Dictionary) needing to be Unity-serializable. Health is not
+	/// represented here - it's always eagerly present on StatBlock and configured separately.
+	/// </summary>
+	[Serializable]
+	public struct StatEntry
+	{
+		public StatType Type;
+		public double Value;
+	}
+
+	/// <summary>
+	/// Design-time entry for a starting status Resistance (see StatEntry).
+	/// </summary>
+	[Serializable]
+	public struct StatusEntry
+	{
+		public StatusType Type;
+		public double Resist;
+		public double Threshold;
+	}
+
+	#endregion Plan Data
+
 	#region Blocks
 
 	[Serializable]
@@ -436,104 +586,67 @@ namespace TowerDefence.Stats
 	{
 		#region Stats
 
-		// Dict
+		/// <summary>
+		/// Every stat besides Health is lazy: it does not exist in StatMap until something actually
+		/// Adds/Sets/Depletes it. Reading a stat that was never touched (GetStat) returns 0 rather than
+		/// creating a wasted Stat object - see GetStat/GetOrCreate.
+		/// </summary>
 		public Dictionary<StatType, IStat> StatMap { get; protected set; } = new Dictionary<StatType, IStat>();
-		public Dictionary<ElementType, ElementStat> ElementMap { get; protected set; } = new Dictionary<ElementType, ElementStat>();
 		public Dictionary<StatusType, Resistance> StatusMap { get; protected set; } = new Dictionary<StatusType, Resistance>();
 
+		/// <summary>
+		/// Which concrete Stat subclass a given StatType should be instantiated as, the first time it's
+		/// lazily created. Anything not listed here is a plain Stat.
+		/// </summary>
+		private static readonly Dictionary<StatType, StatMetaType> StatKinds = new Dictionary<StatType, StatMetaType>
+		{
+			{ StatType.Health, StatMetaType.Depletable }, // Documented here too, though Health itself bypasses StatMap - see Health field
+			{ StatType.Mana, StatMetaType.Depletable },
+			{ StatType.Energy, StatMetaType.Depletable },
+			{ StatType.ArmourHealth, StatMetaType.Depletable },
+			{ StatType.Shield, StatMetaType.Regenerable },
+			{ StatType.DamageNullifier, StatMetaType.Regenerable },
+			{ StatType.SpellNullifier, StatMetaType.Regenerable },
+			{ StatType.Level, StatMetaType.Immutable },
+			{ StatType.Difficulty, StatMetaType.Immutable },
+		};
+
+		/// <summary>
+		/// Base value a StatType is lazily created with if a Plan never gave it an explicit StatEntry -
+		/// everything not listed here defaults to 0 (ddouble's own default), same as before this
+		/// existed. Only add an entry where 0 would be a wrong/dangerous default - e.g. 0 Accuracy would
+		/// silently mean "always misses," which nothing authors on purpose.
+		/// </summary>
+		private static readonly Dictionary<StatType, ddouble> StatDefaults = new Dictionary<StatType, ddouble>
+		{
+			{ StatType.Accuracy, 100 },
+		};
+
+		private static IStat CreateStat(StatType type, ddouble value)
+		{
+			StatMetaType kind = StatKinds.TryGetValue(type, out var k) ? k : StatMetaType.Basic;
+			return kind switch
+			{
+				StatMetaType.Depletable => new DepletableStat(type, value),
+				StatMetaType.Regenerable => new RegenerableStat(type, value),
+				StatMetaType.Immutable => new ImmutableStat(type, value),
+				_ => new Stat(type, value),
+			};
+		}
+
+		// Health is the one stat every entity must have valid at all times (it's what "alive" means),
+		// so unlike everything else it's a real eager field, guaranteed >= 1. See constructors.
 		[Header("Basic Stats")]
 		public DepletableStat Health; // Health is NOT inherently regenerable
-		public DepletableStat Mana;
-		public Stat Attack;
-		public Stat MagicAttack;
-		public Stat Defence;
-		public Stat MagicResist;
-		public RegenerableStat Shield;
-		public DepletableStat Energy;
-		// Defensive
-		[Header("Defensive Stats")]
-		public DepletableStat ArmourHealth;
-		public Stat ArmourDefence;
-		public Stat CritResist;
-		public Stat DodgeChance;
-		public Stat BlockChance;
-		public Stat BlockDefence;
-		public Stat SpellCounter;
-		public Stat SpellCounterResist;
-		public Stat Thorns;
-		public Stat SpellThorns;
-		public Stat Reflect;
-
-		// Anti-Defensive
-		[Header("Anti-Defensive Stats")]
-		public Stat IgnoreBlock;
-		public Stat DefenceReduction;
-		public Stat MagicResistReduction;
-		public Stat ArmourPenetration;
-		public Stat ShieldPenetration;
-		public Stat AttackReduction;
-
-		// Offensive
-		[Header("Offensive Stats")]
-		public Stat AttackSpeed;
-		public Stat CritChance;
-		public Stat CritDamage;
-		public Stat Accuracy;
-		public Stat FinalAttack;
-		public Stat ExtraAttackChance;
-
-		// Advantage
-		[Header("Advantage Stats")]
-		public Stat Lifesteal;
-		public Stat SkillVamp;
-		public Stat ManaCostReduction;
-		public Stat EnergyCostReduction;
-		public Stat CooldownReduction;
-		public Stat AbilityPower;
-
-		// Physics
-		[Header("Sim/Physics Stats")]
-		public Stat TurnSpeed;
-		public Stat Speed;
-		public Stat BulletSpeed;
-		public Stat Range;
-		public Stat RangeCloak;
-		public Stat AoEResist;
-		public Stat ArcOfFire;
-
-		// Meta
-		[Header("Meta Stats")]
-		public ImmutableStat Level;
-		public ImmutableStat Difficulty;
-		public Stat Reward;
-		public Stat Cost;
 
 		#endregion Stats
 
-		#region Status & Element
+		#region Status
 
-		// Status (Resist & Apply)
 		[Header("Status")]
-		public List<Resistance> Resistances;
+		public List<IResistance> Resistances => StatusMap.Values.Cast<IResistance>().ToList();
 
-
-		// Ele (Resist & Mastery)
-		[Header("Element")]
-		public ElementStat Fire;
-		public ElementStat Water;
-		public ElementStat Earth;
-		public ElementStat Air;
-		public ElementStat Wind;
-		public ElementStat Metal;
-		public ElementStat Gold;
-		public ElementStat Nature;
-		public ElementStat Light;
-		public ElementStat Dark;
-		public ElementStat Electric;
-		public ElementStat Ice;
-		public ElementStat Toxic;
-
-		#endregion Status & Element
+		#endregion Status
 
 		#region Events
 
@@ -571,34 +684,16 @@ namespace TowerDefence.Stats
 		// public event Action<ElementType, ddouble> OnElementExplosion = delegate { };
 		// public event Action<ElementType, ddouble> OnElementSynergy = delegate { };
 
+		/// <summary>
+		/// Wires Health's callbacks into this block's bubbled events. Health is the only stat that
+		/// bypasses GetOrCreate (see field above), so it's the only one that doesn't already get
+		/// registered the moment it's created - everything else is wired inline by GetOrCreate/AddStatus
+		/// at the point it's first lazily instantiated.
+		/// </summary>
 		public void RegisterCallbacks()
 		{
-			foreach (var stat in StatMap.Values)
-			{
-				stat.OnValueChanged += (s, v) =>
-				{
-					OnValueChanged?.Invoke(s, v);
-					if (v < s.Value) OnValueDecreased?.Invoke(s, v);
-					if (v > s.Value) OnValueIncreased?.Invoke(s, v);
-				};
-				if (stat is IDepletable depletable)
-				{
-					depletable.OnValueChanged += (s, v) => OnMaxValueChanged?.Invoke((IDepletable)s, v); // Value = MaxValue, CurrentValue = Current
-					depletable.OnCurrentValueDecreased += (s, v) => OnCurrentValueDecreased?.Invoke(s, v);
-					depletable.OnCurrentValueIncreased += (s, v) => OnCurrentValueIncreased?.Invoke(s, v);
-				}
-				if (stat is IRegenerable regenerable)
-				{
-					regenerable.OnRegenerate += (s, v) => OnRegenerate?.Invoke(s, v);
-					regenerable.OnRest += (s, v) => OnRest?.Invoke(s, v);
-					regenerable.OnRegenValueChanged += (s, v) => OnRegenValueChanged?.Invoke(s, v);
-					regenerable.OnRegenRateChanged += (s, v) => { OnRegenRateChanged?.Invoke(s, v); };
-				}
-			}
-			foreach (IResistance resistance in Resistances)
-			{
-				RegisterResistanceCallbacks(resistance);
-			}
+			RegisterStatCallbacks(Health);
+			RegisterDepletableCallbacks(Health);
 		}
 
 		public void RegisterResistanceCallbacks(IResistance resistance)
@@ -609,114 +704,78 @@ namespace TowerDefence.Stats
 			resistance.OnThresholdChanged += (r, v) => OnThresholdChanged?.Invoke(r, v);
 		}
 
+		public void RegisterRegenerableCallbacks(IRegenerable regenerable)
+		{
+			regenerable.OnRegenerate += (s, v) => OnRegenerate?.Invoke(s, v);
+			regenerable.OnRest += (s, v) => OnRest?.Invoke(s, v);
+			regenerable.OnRegenValueChanged += (s, v) => OnRegenValueChanged?.Invoke(s, v);
+			regenerable.OnRegenRateChanged += (s, v) => { OnRegenRateChanged?.Invoke(s, v); };
+
+			// IRegenerables are IDepletables
+			// RegisterDepletableCallbacks(regenerable);
+		}
+
+		public void RegisterDepletableCallbacks(IDepletable depletable)
+		{
+			depletable.OnValueChanged += (s, v) => OnMaxValueChanged?.Invoke((IDepletable)s, v); // Value = MaxValue, CurrentValue = Current
+			depletable.OnCurrentValueDecreased += (s, v) => OnCurrentValueDecreased?.Invoke(s, v);
+			depletable.OnCurrentValueIncreased += (s, v) => OnCurrentValueIncreased?.Invoke(s, v);
+		}
+
+		public void RegisterStatCallbacks(IStat stat)
+		{
+			stat.OnValueChanged += (s, v) =>
+							{
+								OnValueChanged?.Invoke(s, v);
+								if (v < s.Value) OnValueDecreased?.Invoke(s, v);
+								if (v > s.Value) OnValueIncreased?.Invoke(s, v);
+							};
+		}
+
 		#endregion Events
 
 		#region Constructor
 
-		// Constructor
-		public StatBlock()
+		/// <summary>
+		/// Only Health is ever eagerly created. Everything else - the ~40 combat stats, elements,
+		/// statuses - stays out of StatMap entirely until something Adds/Sets/Depletes it.
+		/// Health must always be a valid, living value: non-positive/unset input is clamped to 1.
+		/// </summary>
+		public StatBlock(ddouble health = default(ddouble))
 		{
-			Health = new DepletableStat(StatType.Health);
-			Mana = new DepletableStat(StatType.Mana);
-			Attack = new Stat(StatType.Attack);
-			MagicAttack = new Stat(StatType.MagicAttack);
-			Defence = new Stat(StatType.Defence);
-			MagicResist = new Stat(StatType.MagicResist);
-			Shield = new RegenerableStat(StatType.Shield);
-			Energy = new DepletableStat(StatType.Energy);
-			//
-			ArmourHealth = new DepletableStat(StatType.ArmourHealth);
-			ArmourDefence = new Stat(StatType.ArmourDefence);
-			CritResist = new Stat(StatType.CritResist);
-			DodgeChance = new Stat(StatType.DodgeChance);
-			BlockChance = new Stat(StatType.BlockChance);
-			BlockDefence = new Stat(StatType.BlockDefence);
-			SpellCounter = new Stat(StatType.SpellCounter);
-			SpellCounterResist = new Stat(StatType.SpellCounterResist);
-			Thorns = new Stat(StatType.Thorns);
-			SpellThorns = new Stat(StatType.SpellThorns);
-			Reflect = new Stat(StatType.Reflect);
-			//
-			IgnoreBlock = new Stat(StatType.IgnoreBlock);
-			DefenceReduction = new Stat(StatType.DefenceReduction);
-			MagicResistReduction = new Stat(StatType.MagicResistReduction);
-			ArmourPenetration = new Stat(StatType.ArmourPenetration);
-			ShieldPenetration = new Stat(StatType.ShieldPenetration);
-			AttackReduction = new Stat(StatType.AttackReduction);
-			AttackSpeed = new Stat(StatType.AttackSpeed);
-			//
-			CritChance = new Stat(StatType.CritChance);
-			CritDamage = new Stat(StatType.CritDamage);
-			Accuracy = new Stat(StatType.Accuracy);
-			FinalAttack = new Stat(StatType.FinalAttack);
-			ExtraAttackChance = new Stat(StatType.ExtraAttackChance);
-			//
-			Lifesteal = new Stat(StatType.Lifesteal);
-			SkillVamp = new Stat(StatType.SkillVamp);
-			ManaCostReduction = new Stat(StatType.ManaCostReduction);
-			EnergyCostReduction = new Stat(StatType.EnergyCostReduction);
-			CooldownReduction = new Stat(StatType.CooldownReduction);
-			AbilityPower = new Stat(StatType.AbilityPower);
-			//
-			TurnSpeed = new Stat(StatType.TurnSpeed);
-			Speed = new Stat(StatType.Speed);
-			BulletSpeed = new Stat(StatType.BulletSpeed);
-			RangeCloak = new Stat(StatType.RangeCloak);
-			Range = new Stat(StatType.Range);
-			AoEResist = new Stat(StatType.AoEResist);
-			ArcOfFire = new Stat(StatType.ArcOfFire);
-			//
-			Level = new ImmutableStat(StatType.Level);
-			Difficulty = new ImmutableStat(StatType.Difficulty);
-			Reward = new Stat(StatType.Reward);
-			Cost = new Stat(StatType.Cost);
-			//
-			Fire = new ElementStat(ElementType.Fire);
-			Water = new ElementStat(ElementType.Water);
-			Earth = new ElementStat(ElementType.Earth);
-			Air = new ElementStat(ElementType.Air);
-			Wind = new ElementStat(ElementType.Wind);
-			Metal = new ElementStat(ElementType.Metal);
-			Gold = new ElementStat(ElementType.Gold);
-			Nature = new ElementStat(ElementType.Nature);
-			Light = new ElementStat(ElementType.Light);
-			Dark = new ElementStat(ElementType.Dark);
-			Electric = new ElementStat(ElementType.Electric);
-			Ice = new ElementStat(ElementType.Ice);
-			Toxic = new ElementStat(ElementType.Toxic);
-
+			if (health <= 0) health = 1;
+			Health = new DepletableStat(StatType.Health, health);
 			RegisterCallbacks();
 		}
 
-		// Initialisers
-		public void InitialiseNewStat(StatType type)
+		/// <summary>
+		/// Builds a StatBlock from a Plan's sparse, Inspector-authored data (see StatEntry/StatusEntry).
+		/// Only the stats/statuses actually listed get instantiated - nothing is created speculatively.
+		/// </summary>
+		public StatBlock(ddouble health, IEnumerable<StatEntry> statEntries, IEnumerable<StatusEntry> statusEntries = null) : this(health)
 		{
-			if (StatMap.ContainsKey(type))
+			if (statEntries != null)
 			{
-				LogManager.Instance.LogWarning($"Stat {type} already exists in StatBlock!");
-				return;
+				foreach (StatEntry entry in statEntries)
+				{
+					if (entry.Type == StatType.Health) continue; // Health is configured via the health parameter above
+					// Both - GetOrCreate(entry.Type) here first constructs the stat with StatDefaults'
+					// value (or 0), not entry.Value, so SetStat alone would leave Base stuck at that
+					// construction-time default forever. SetBase makes entry.Value the real starting
+					// point for later IStatMod recomputes (see Entity.GetStat) to build on.
+					SetBase(entry.Type, entry.Value);
+					SetStat(entry.Type, entry.Value);
+				}
 			}
-			StatMap[type] = new Stat(type);
-		}
-
-		public void InitialiseNewElement(ElementType type)
-		{
-			if (ElementMap.ContainsKey(type))
+			if (statusEntries != null)
 			{
-				LogManager.Instance.LogWarning($"Element {type} already exists in StatBlock!");
-				return;
+				foreach (StatusEntry entry in statusEntries)
+				{
+					IResistance resistance = GetOrCreateStatus(entry.Type);
+					resistance.Resist = entry.Resist;
+					resistance.Threshold = entry.Threshold;
+				}
 			}
-			ElementMap[type] = new ElementStat(type);
-		}
-
-		public void InitialiseNewStatus(StatusType type)
-		{
-			if (StatusMap.ContainsKey(type))
-			{
-				LogManager.Instance.LogWarning($"Status {type} already exists in StatBlock!");
-				return;
-			}
-			StatusMap[type] = new Resistance(type);
 		}
 
 		#endregion Constructor
@@ -735,37 +794,42 @@ namespace TowerDefence.Stats
 
 		#region Methods
 
-		// ===== Functions ======
-		// Construction
-		List<IDepletable> Depletables;
-		public void ConstructDepletableStats()
+		/// <summary>
+		/// Gets the stat object, lazily creating (and wiring the callbacks for) one if it doesn't exist
+		/// yet. Internal - callers that only want a number should use GetStat/GetCurrent instead, which
+		/// never create anything.
+		/// </summary>
+		private IStat GetOrCreate(StatType type)
 		{
-			List<IDepletable> depletableStats = new List<IDepletable>();
-			foreach (var field in GetType().GetFields())
+			if (type == StatType.Health) return Health;
+			if (!StatMap.TryGetValue(type, out IStat stat))
 			{
-				if (field.FieldType == typeof(IDepletable))
-				{
-					depletableStats.Add((IDepletable)field.GetValue(this));
-				}
+				ddouble defaultValue = StatDefaults.TryGetValue(type, out var d) ? d : default(ddouble);
+				stat = CreateStat(type, defaultValue);
+				StatMap[type] = stat;
+				RegisterStatCallbacks(stat);
+				if (stat is IDepletable depletable) RegisterDepletableCallbacks(depletable);
+				if (stat is IRegenerable regenerable) RegisterRegenerableCallbacks(regenerable);
 			}
+			return stat;
 		}
 
-		List<IRegenerable> Regenerables;
-		public void ConstructRegenerableStats()
+		private Resistance GetOrCreateStatus(StatusType type)
 		{
-			List<IRegenerable> regenerableStats = new List<IRegenerable>();
-			foreach (var field in GetType().GetFields())
+			if (!StatusMap.TryGetValue(type, out Resistance resistance))
 			{
-				if (typeof(IRegenerable).IsAssignableFrom(field.FieldType))
-				{
-					var value = field.GetValue(this) as IRegenerable;
-					if (value != null)
-						regenerableStats.Add(value);
-				}
+				resistance = new Resistance(type);
+				StatusMap[type] = resistance;
+				RegisterResistanceCallbacks(resistance);
 			}
+			return resistance;
 		}
 
 		// Adders
+		/// <summary>
+		/// Inserts a pre-built stat object directly (e.g. from deserialisation). Prefer AddStat(type, value)
+		/// for the common "add this much" case, which lazily creates the right concrete Stat subtype itself.
+		/// </summary>
 		public void AddStat(IStat stat)
 		{
 			if (stat == null)
@@ -776,15 +840,55 @@ namespace TowerDefence.Stats
 			if (StatMap.ContainsKey(stat.StatType))
 			{
 				LogManager.Instance.LogWarning($"Stat {stat.StatType} already exists in StatBlock!");
-				GetType().GetField(stat.StatType.ToString()).SetValue(this, stat);
 				return;
 			}
 			StatMap[stat.StatType] = stat;
+			RegisterStatCallbacks(stat);
+			if (stat is IDepletable depletable) RegisterDepletableCallbacks(depletable);
+			if (stat is IRegenerable regenerable) RegisterRegenerableCallbacks(regenerable);
+		}
+
+		/// <summary>
+		/// Adds to a stat's value, creating it (at 0) first if it doesn't exist yet.
+		/// </summary>
+		public void AddStat(StatType type, ddouble value)
+		{
+			GetOrCreate(type).AddValue(value);
+		}
+
+		/// <summary>
+		/// Forces a stat's value, creating it first if it doesn't exist yet.
+		/// </summary>
+		public void SetStat(StatType type, ddouble value)
+		{
+			GetOrCreate(type).SetValue(value);
+		}
+
+		/// <summary>
+		/// Sets a stat's raw Base directly - for *permanent* scaling, e.g. EntityManager's spawn-time
+		/// wave-progression scaling, so a Passive applied later (see Skill.ApplyPassive, which reads
+		/// Base to compute its own contribution) builds on top of it correctly. IStat.Base has no public
+		/// setter (only the concrete Stat class does), so this reaches past the interface rather than
+		/// adding one - every concrete stat type here already extends Stat.
+		/// </summary>
+		public void SetBase(StatType type, ddouble value)
+		{
+			if (GetOrCreate(type) is Stat stat) stat.Base = value;
+		}
+
+		/// <summary>
+		/// Depletes a stat's Current value (e.g. Mana/Health), creating it first if it doesn't exist yet.
+		/// No-ops with a warning if the StatType isn't a depletable kind.
+		/// </summary>
+		public void Deplete(StatType type, ddouble amount)
+		{
+			if (GetOrCreate(type) is IDepletable depletable) depletable.Deplete(amount);
+			else LogManager.Instance.LogWarning($"Stat {type} is not depletable.");
 		}
 
 		public void ModifyStat(StatType type, IStatMod mod)
 		{
-			IStat stat = GetStat(type);
+			IStat stat = GetOrCreate(type);
 			stat.SetValue(MathsLib.Operate(stat.Value, mod.Value, mod.Operation));
 			if (mod.IsPositive)
 				OnStatBonusAdded?.Invoke(stat, mod);
@@ -808,76 +912,79 @@ namespace TowerDefence.Stats
 			StatMap.Remove(stat.StatType);
 		}
 
-		public void AddNewResistance(StatusType statusType, ddouble value)
+		/// <summary>
+		/// Adds status buildup, creating the Resistance (at its default Resist/Threshold) first if it
+		/// doesn't exist yet.
+		/// </summary>
+		public void AddStatus(StatusType type, ddouble amount)
 		{
-			Resistances.Add(new Resistance(statusType, value));
-			RegisterResistanceCallbacks(Resistances.Last());
+			GetOrCreateStatus(type).AddStatus(amount);
 		}
 
-		public void AddResistance(Resistance resistance)
+		public void AddRegenerable(StatType type, ddouble value = default(ddouble))
 		{
-			if (Resistances == null)
-				Resistances = new List<Resistance>();
-			var existing = Resistances.Find(r => r.Status == resistance.Status);
-
-			// Add resistance
-			if (existing != null)
-			{
-				existing.Value += resistance.Value;
-			}
-			// Create resistance
-			else
-			{
-				AddNewResistance(resistance.Status, resistance.Value);
-			}
+			IStat stat = GetOrCreate(type);
+			if (stat is IRegenerable regenerable) regenerable.AddValue(value);
+			else LogManager.Instance.LogWarning($"Stat {type} is not regenerable.");
 		}
 
 		// Getters
 		public List<IDepletable> GetDepletableStats()
 		{
-			if (Depletables == null)
-				ConstructDepletableStats();
-			return Depletables;
+			return StatMap.Values.OfType<IDepletable>().Prepend(Health).ToList();
 		}
 
 		public List<IRegenerable> GetRegenerableStats()
 		{
-			if (Regenerables == null)
-				ConstructRegenerableStats();
-			return Regenerables;
+			return StatMap.Values.OfType<IRegenerable>().ToList();
 		}
 
-		public IStat GetStat(StatType type)
+		/// <summary>
+		/// Returns the stat's current Value, or 0 if it was never created - never creates it.
+		/// </summary>
+		public ddouble GetStat(StatType type)
 		{
-			return StatMap.ContainsKey(type) ? StatMap[type] : null;
+			if (type == StatType.Health) return Health.Value;
+			return StatMap.TryGetValue(type, out IStat stat) ? stat.Value : default(ddouble);
+		}
+
+		/// <summary>
+		/// Returns a stat's raw Base (pre-Passive, pre-mod), or 0 if it was never created - never
+		/// creates it. What Skill.ApplyPassive reads before computing its own contribution.
+		/// </summary>
+		public ddouble GetBase(StatType type)
+		{
+			if (type == StatType.Health) return Health.Base;
+			return StatMap.TryGetValue(type, out IStat stat) ? stat.Base : default(ddouble);
+		}
+
+		/// <summary>
+		/// Returns a depletable stat's Current value, or 0 if it was never created - never creates it.
+		/// </summary>
+		public ddouble GetCurrent(StatType type)
+		{
+			if (type == StatType.Health) return Health.Current;
+			if (StatMap.TryGetValue(type, out IStat stat) && stat is IDepletable depletable) return depletable.Current;
+			return default(ddouble);
+		}
+
+		/// <summary>
+		/// Returns a status's current buildup Value, or 0 if it was never created - never creates it.
+		/// Named distinctly from Entity.GetStatus, which returns the IResistance object itself.
+		/// </summary>
+		public ddouble GetStatusValue(StatusType type)
+		{
+			return StatusMap.TryGetValue(type, out Resistance resistance) ? resistance.Value : default(ddouble);
 		}
 
 		public bool IfStatExists(StatType type)
 		{
-			return StatMap.ContainsKey(type);
+			return type == StatType.Health || StatMap.ContainsKey(type);
 		}
 
 		public List<IStat> GetStats()
 		{
-			return StatMap.Values.ToList();
-		}
-
-		public List<IElement> GetElementStats()
-		{
-			List<IElement> elementStats = new List<IElement>();
-			foreach (var field in GetType().GetFields())
-			{
-				if (field.FieldType == typeof(IElement))
-				{
-					if (field.GetValue(this) == null)
-					{
-						LogManager.Instance.LogError($"Element {field.Name} is null!");
-						continue;
-					}
-					elementStats.Add((IElement)field.GetValue(this));
-				}
-			}
-			return elementStats;
+			return StatMap.Values.Prepend((IStat)Health).ToList();
 		}
 
 		// ===== Time =====

@@ -20,9 +20,9 @@ namespace TowerDefence.Entity.Skills
 		}
 	}
 
-	public class ElementalInteraction : Interaction
+	public class ElementInteraction : Interaction
 	{
-		public ElementalInteraction(InteractionType interactionType, float value) : base(interactionType, value)
+		public ElementInteraction(InteractionType interactionType, float value) : base(interactionType, value)
 		{
 		}
 	}

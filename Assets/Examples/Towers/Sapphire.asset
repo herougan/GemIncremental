@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0be3397640ac3445fbb0c3c6bee74f1b, type: 3}
+  m_Name: Sapphire
+  m_EditorClassIdentifier: Assembly-CSharp::TowerDefence.Entity.Tower.TowerPlan
+  <Name>k__BackingField: Sapphire
+  <StartingHealth>k__BackingField:
+    Mantissa: 0.9999998984023263
+    Exponent: 1.3010300397872925
+    Precision: 10
+  <StatEntries>k__BackingField:
+  - Type: 2
+    Value: 15
+  - Type: 42
+    Value: 10
+  - Type: 27
+    Value: 1.2000000476837158
+  <StatusEntries>k__BackingField: []
+  <ElementEntries>k__BackingField: []
+  <InitSkills>k__BackingField:
+  - {fileID: 11400000, guid: 2ecb79f4d80e34fba9526168f29ad32c, type: 2}
+  <InitBuffs>k__BackingField: []
+  <BulletType>k__BackingField: 0
+  <Targetting>k__BackingField: 0
+  <TargetingTags>k__BackingField: 
+  reeling: 0
+  Element:
+    _Base:
+      Mantissa: 0
+      Exponent: 0
+      Precision: 0
+    _StatType: 0
+    _Value:
+      Mantissa: 0
+      Exponent: 0
+      Precision: 0
+    _Element: 0
+    _Mastery:
+      Mantissa: 0
+      Exponent: 0
+      Precision: 0
+    _Resist:
+      Mantissa: 0
+      Exponent: 0
+      Precision: 0
+    _Dynamic: 0
+  type: 6
+  tags: 
+  rank: 0
+  baseSprite: {fileID: 0}
+  turretSprite: {fileID: 0}
+  bulletSprite: {fileID: 0}
+  turretTexture: {fileID: 0}
+  attackSound: {fileID: 0}
+  idleSound: {fileID: 0}
+  buildSound: {fileID: 0}
+  channelingTime: 0
+  NextRank: {fileID: 0}
+  PreviousRank: {fileID: 0}
+  ingredients: []
+  oneShot: 0
+  combinable: 0
+  kills: 0
+  count: 0

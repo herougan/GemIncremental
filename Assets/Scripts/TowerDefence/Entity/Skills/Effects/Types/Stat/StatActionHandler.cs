@@ -1,69 +1,40 @@
-
 using TowerDefence.Context;
+using TowerDefence.Stats;
+using Util.Debug;
+using Util.Maths;
 
 namespace TowerDefence.Entity.Skills.Effects.Types.Stat
 {
-	public class StatActionHandler : IActionHandler
+	/// <summary>
+	/// Handles ActionType.Stat: registers a permanent Add IStatMod (action.Value onto action.Stat) on
+	/// the trigger's Target, falling back to the acting Entity itself if no Target is set (e.g. a
+	/// self-buff) - via Entity.RegisterStatMod, same registry Skill.ApplyPassive/Foundry use, so it
+	/// composes correctly with everything else touching the same stat instead of a separate direct
+	/// StatBlock mutation.
+	///
+	/// Permanent, not owned by anything that expires it: an ActionType.Stat mod is "permanent until
+	/// reset" by design - if you want a stat change that goes away on its own, that's what
+	/// ActionType.ApplyBuff + a Passive containing the actual StatMod is for (the Buff's own
+	/// expiry/cleanse deregisters it - see Buff's Duration timer). This handler never deregisters what
+	/// it registers.
+	/// </summary>
+	public class StatActionHandler : ActionHandler
 	{
-		public ActionType Type => ActionType.Stat;
-
-		public void ApplyAction(GameContext context, Action effect)
+		public StatActionHandler()
 		{
-			// Default implementation for applying effects
-			// TriggerContext triggerContext = context.GetTriggerContext(effect.Trigger);
-			// IEntity entity = triggerContext.Target;
-			// entity.GetStat(effect.StatType).OperateValue(effect.Value, effect.Operation);
-
-
+			Type = ActionType.Stat;
 		}
 
-		public void Rollback(GameContext context, Action effect)
+		public override void ApplyAction(in GameContext context, in TriggerContext trigger, IEntity Entity, IAction action)
 		{
-			// Default implementation for rolling back effects
-
-			// Effectively rollsback effects caused by this action
-		}
-
-		public void RemoveEffect(GameContext context, Action effect)
-		{
-			// Default implementation for removing effects
-
-			// Removes attached effect but those not recalculate stats
-		}
-
-		public void ApplyAction(in GameContext context, in TriggerContext trigger, Action effect)
-		{
-			throw new System.NotImplementedException();
-		}
-
-		public void Rollback(in GameContext context, Action effect)
-		{
-			throw new System.NotImplementedException();
-		}
-
-		public void RemoveEffect(in GameContext context, Action effect)
-		{
-			throw new System.NotImplementedException();
-		}
-
-		public void ApplyAction(in GameContext context, in TriggerContext trigger, IEntity Entity, Action effect)
-		{
-			throw new System.NotImplementedException();
-		}
-
-		public void ApplyAction(in GameContext context, in TriggerContext trigger, IEntity Entity, IAction effect)
-		{
-			throw new System.NotImplementedException();
-		}
-
-		public void Rollback(in GameContext context, IAction effect)
-		{
-			throw new System.NotImplementedException();
-		}
-
-		public void RemoveEffect(in GameContext context, IAction effect)
-		{
-			throw new System.NotImplementedException();
+			if (action is not Action statAction)
+			{
+				LogManager.Instance.LogWarning($"StatActionHandler received a non-Action action ({action.ActionType}).");
+				return;
+			}
+			IEntity target = trigger?.Target ?? Entity;
+			IStatMod mod = new StatMod(statAction.Value, statAction.Stat, MathOperation.Add, trigger?.Source);
+			target.RegisterStatMod(mod);
 		}
 	}
 }

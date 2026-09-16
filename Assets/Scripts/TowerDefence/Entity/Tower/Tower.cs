@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using TowerDefence.Entity.Skills;
+using TowerDefence.Stats;
 using UnityEngine;
 
 namespace TowerDefence.Entity.Tower
@@ -14,6 +16,11 @@ namespace TowerDefence.Entity.Tower
 		public TowerPlan _plan;
 		public new IEntityPlan Plan => _plan;
 
+		public Tower(TowerPlan plan) : base(plan)
+		{
+			_plan = plan;
+		}
+
 		// ===== Lineage =====
 		public List<Tower> Children { get; private set; }// Set on fusion
 		public DateTime DateCreated { get; private set; }
@@ -24,18 +31,35 @@ namespace TowerDefence.Entity.Tower
 		#region Stats
 
 		// Tower-specific Stats
-		public double cooldown;
+		// cooldown/turnSpeed/arcOfFire/reeling used to live here as raw fields - dead pre-StatMod cruft,
+		// removed: Attack/Range/AttackSpeed/TurnSpeed/ArcOfFire are all StatType entries now (see
+		// StatType.cs), read identically off any Entity via GetStat - the shared inheritance point is
+		// Entity itself, not a Tower-specific field, so Monster gets the same mechanism for free. `cost`
+		// is genuinely Tower-only (not a combat stat) but isn't read anywhere yet either - left as a
+		// placeholder for whenever the Mulligan/shop layer needs a price.
 		public double cost;
 
-		//
-		public float turnSpeed;
-		public float arcOfFire;
-		public float reeling;
-
-		// Cooldown Cost Decrease
-
-
 		#endregion Stats
+
+		#region Upgrades
+
+		// Upgrade Centre state - see Util.Game.TowerUpgradeUtil, which is the only thing that should
+		// mutate either of these (never GetStat/RegisterStatMod or Skills.Add directly - that would
+		// desync the purchase count from what's actually been bought/registered).
+		//
+		// How many times each StatType has been purchased on THIS live Tower instance - drives per-
+		// purchase cost scaling (see TowerUpgradeUtil.GetStatCost). Runtime-only, not part of TowerPlan -
+		// every Tower spawned from the same Plan starts back at 0 purchases, same as StatBlock itself
+		// starting fresh from the Plan's sparse StatEntries.
+		public readonly Dictionary<StatType, int> UpgradePurchases = new();
+
+		// Which of TowerPlan.SkillUnlocks have actually been bought (as opposed to merely eligible -
+		// see TowerUpgradeUtil.GetEligibleSkillUnlocks) - a purchased unlock's Skill also lives in the
+		// normal Skills list once registered, but that alone can't distinguish "granted via InitSkills"
+		// from "bought via the Upgrade Centre," which TowerUpgradeUtil needs to know to avoid a double-buy.
+		public readonly HashSet<SkillPlan> PurchasedSkillUnlocks = new();
+
+		#endregion Upgrades
 
 		#region Game State
 

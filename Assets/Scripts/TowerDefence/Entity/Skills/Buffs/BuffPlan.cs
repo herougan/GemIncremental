@@ -16,9 +16,21 @@ namespace TowerDefence.Entity.Skills.Buffs
 	public class BuffPlan : SkillPlan
 	{
 		// ===== Buff Specific =====
-		public float Duration { get; private set; }
+		[field: SerializeField] public float Duration { get; set; }
 		public BuffStackType StackType { get; private set; }
 
+		// ===== Aura (see Buff.Create/Aura.cs) =====
+		// Authoring an Aura is just flagging an ordinary BuffPlan, not a separate asset type - whatever
+		// grants this Plan (Entity.Spawn's InitBuffs, or ActionType.ApplyBuff) goes through Buff.Create,
+		// which builds a real Aura (not a plain Buff) the moment IsAura is set, no other wiring needed.
+		[field: SerializeField] public bool IsAura { get; set; }
+		[field: SerializeField] public float AuraRange { get; set; }
+		[field: SerializeField] public bool AuraAffectSelf { get; set; }
+		[field: SerializeField] public bool AuraAffectOthers { get; set; } = true;
+		[field: SerializeField] public bool AuraSpreading { get; set; }
+		// 0 = removed the instant an entity leaves Range; >0 = they keep it as a normal expiring Buff
+		// for this many more seconds after leaving (see Aura.Leave/IBuff.SetDuration).
+		[field: SerializeField] public float AuraLingerDuration { get; set; }
 
 		// Ancestry
 		public new BuffPlan Predecessor;

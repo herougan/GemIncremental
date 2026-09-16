@@ -92,7 +92,7 @@ namespace TowerDefence.Entity.Skills.Keywords
 
 		public new ddouble Value
 		{
-			get { return DependencyEntity.GetStat(StatType).Value + Bias; }
+			get { return DependencyEntity.GetStat(StatType) + Bias; }
 		}
 
 		public void SetBias(ddouble bias, MathOperation biasOperation)

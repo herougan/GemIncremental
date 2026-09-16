@@ -1,5 +1,6 @@
 using System;
 using TowerDefence.Library;
+using TowerDefence.Stats;
 using Util.Maths;
 
 namespace TowerDefence.Entity.Skills.Buffs
@@ -8,7 +9,7 @@ namespace TowerDefence.Entity.Skills.Buffs
 	{
 		public StatusType StatusType { get; private set; }
 
-		public StatusBuff(StatusType statusType, ddouble scale = default(ddouble)) : base(SkillsLib.StatusPlans[statusType], scale)
+		public StatusBuff(StatusType statusType, IEntity caster = null, ddouble scale = default(ddouble)) : base(SkillsLib.GetStatusPlan(statusType), caster, scale)
 		{
 			StatusType = statusType;
 			BuffStackType = SkillsLib.StatusStackTypes[statusType];

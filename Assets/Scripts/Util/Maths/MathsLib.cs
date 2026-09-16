@@ -93,6 +93,57 @@ namespace Util.Maths
 
 		#region Operations
 
+		/// <summary>
+		/// e^x, computed directly in ddouble's mantissa/exponent form rather than through
+		/// System.Math.Exp(x) - that overflows to double.PositiveInfinity once x passes ~709, which
+		/// defeats the entire point of ddouble (representing numbers far beyond what a double can hold).
+		/// Anything stat-related uses ddouble specifically to avoid that ceiling, so exponential scaling
+		/// (e.g. EntityManager's spawn-time wave-progression multiplier) needs an Exp that doesn't
+		/// reintroduce it.
+		///
+		/// Works by converting to base 10 instead of e (e^x = 10^(x/ln 10)), then splitting that into an
+		/// integer exponent and a fractional mantissa in [1, 10) - the same normalized shape ddouble's
+		/// own double-&gt;ddouble implicit conversion already produces. The intermediate double math
+		/// (math.pow(10, frac)) never exceeds single digits regardless of how large x is, so it can't
+		/// overflow - only the final ddouble's Exponent field grows, and that's a double itself, with a
+		/// vastly larger usable range than the number it would have represented directly.
+		/// </summary>
+		public static ddouble Exp(double x)
+		{
+			double y = x / math.log(10.0); // e^x = 10^y
+			double exponent = math.floor(y);
+			double mantissa = math.pow(10.0, y - exponent); // in [1, 10)
+			return new ddouble(mantissa, exponent);
+		}
+
+		/// <summary>
+		/// log10(d), computed directly from d's mantissa/exponent - log10(mantissa * 10^exp) =
+		/// log10(mantissa) + exp - rather than converting the whole ddouble to a double first (which
+		/// overflows for a large-exponent ddouble, since ddouble's own implicit conversion to double
+		/// computes Mantissa * 10^Exponent directly and that pow can itself overflow). The result is
+		/// always a normal-sized number - taking a log shrinks scale, it doesn't need ddouble's range -
+		/// but returns ddouble anyway for API consistency with everything else here.
+		/// </summary>
+		public static ddouble Log10(ddouble d) => math.log10(d.Mantissa) + d.Exponent;
+
+		/// <summary>Natural log - ln(x) = log10(x) * ln(10). Same safety reasoning as Log10.</summary>
+		public static ddouble Ln(ddouble d) => Log10(d) * math.log(10.0);
+
+		/// <summary>Log to an arbitrary base - log_b(x) = log10(x) / log10(b). Same safety reasoning as Log10.</summary>
+		public static ddouble Log(ddouble d, double newBase) => Log10(d) / math.log10(newBase);
+
+		/// <summary>
+		/// sin/cos/tan of a ddouble angle - thin wrappers through the existing ddouble&lt;-&gt;double
+		/// conversion, not reimplemented in mantissa/exponent form like Exp/Log10 are. Deliberate: trig
+		/// functions are periodic and only meaningful for normal-sized arguments in the first place -
+		/// nothing should ever be calling Sin on a googol-scale ddouble angle, that's a bug at the call
+		/// site, not a case worth engineering around. Not safe for arbitrarily large input the way Exp/
+		/// Log10/Ln/Log are; that's a non-goal here, not an oversight.
+		/// </summary>
+		public static ddouble Sin(ddouble angle) => math.sin((double)angle);
+		public static ddouble Cos(ddouble angle) => math.cos((double)angle);
+		public static ddouble Tan(ddouble angle) => math.tan((double)angle);
+
 		public static double Operate(double a, double b, MathOperation op)
 		{
 			switch (op)
@@ -282,6 +333,7 @@ namespace Util.Maths
 
 	#region Objects and Interfaces
 	// ===== Objects =====
+	[System.Serializable]
 	public struct ddouble
 	{
 		// ===== Fields =====
@@ -423,20 +475,27 @@ namespace Util.Maths
 			return new ddouble(mantissaQuotient / scale, b.Exponent);
 		}
 
-		public static ddouble operator ^(ddouble a, ddouble b) // Power
+		/// <summary>
+		/// a^b, using b's *full* value (Mantissa AND Exponent) - the previous implementation used only
+		/// b.Mantissa (always in [1, 10)), silently discarding b.Exponent, so raising to any power of 10
+		/// or more (25, 100, ...) gave the wrong answer even though nothing was astronomically large.
+		///
+		/// Computed via logs so a huge base (a up to ~1e100+) never overflows: log10(a^b) = b * log10(a).
+		/// log10(a.Mantissa) + a.Exponent is always a normal-sized double even for a huge a (see
+		/// MathsLib.Log10's own reasoning), and b converted to a plain double is safe too since a stat
+		/// mod's own exponent argument realistically never needs to be astronomically large itself (only
+		/// the base/result do) - same tradeoff MathsLib.Sin/Cos/Tan make deliberately. The result's
+		/// exponent (b * log10(a)) can itself be large (e.g. base 1e100 squared -> 200) - that's still
+		/// just a plain double, comfortably within range, and splitting it into mantissa+exponent the
+		/// same way Exp does keeps the final ddouble's own Exponent field as the only thing that grows.
+		/// </summary>
+		public static ddouble operator ^(ddouble a, ddouble b)
 		{
-			double newMantissa = math.pow(a.Mantissa, b.Mantissa);
-			double newExponent = a.Exponent * b.Mantissa;
-			if (newMantissa >= 10)
-			{
-				newMantissa /= 10;
-				newExponent += 1;
-			}
-			else if (newMantissa < 1)
-			{
-				newMantissa *= 10;
-				newExponent -= 1;
-			}
+			double log10A = math.log10(a.Mantissa) + a.Exponent;
+			double resultLog10 = log10A * (double)b;
+
+			double newExponent = math.floor(resultLog10);
+			double newMantissa = math.pow(10.0, resultLog10 - newExponent); // in [1, 10)
 			return new ddouble(newMantissa, newExponent);
 		}
 		public static ddouble operator ^(ddouble a, double b)
@@ -475,6 +534,32 @@ namespace Util.Maths
 				newExponent -= 1;
 			}
 			return new ddouble(newMantissa, newExponent);
+		}
+
+		// Static Identities
+		public static ddouble ZERO = new();
+
+		/// <summary>
+		/// Human-facing display string for game-balance numbers - plain with thousands separators below
+		/// a million, abbreviated (M/B/T/Qa/...) above. Distinct from ToString() (mantissa-e-exponent,
+		/// meant for huge incremental-currency numbers, e.g. "1.000e12") - use this anywhere a player
+		/// reads a normal number: damage, DPS, stat values, description placeholders.
+		/// </summary>
+		public string PrettyPrint()
+		{
+			double value = (double)this;
+			double abs = math.abs(value);
+			string sign = value < 0 ? "-" : "";
+
+			(double threshold, string suffix)[] tiers =
+			{
+				(1e15, "Qa"), (1e12, "T"), (1e9, "B"), (1e6, "M"),
+			};
+			foreach (var (threshold, suffix) in tiers)
+			{
+				if (abs >= threshold) return sign + (abs / threshold).ToString("0.##") + suffix;
+			}
+			return sign + abs.ToString("#,##0.##");
 		}
 	}
 

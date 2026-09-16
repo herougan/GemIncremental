@@ -1,0 +1,106 @@
+We can't really do different type of enemies with different goals as we can shift the towers during battle. We can't "aim" for enemies charging a special move.
+Every enemy in a way, has equal threat level. It can add an interesting twist however. And Yes, there are player skills to spice up the game (that can "aim").
+
+So, in every wave, you are simply battling a concept. E.g. High HP regen enemies. You can't say... destroy the guy with the bomb but also focus on their factories etc.
+
+Zones:
+
+
+Ideas: Ecology, some creatures don't aim to go to the gem, Enemies that scale beyond the enemy walking through the trenches,
+Enemies that can walk through walls (takes 10 effort), Bosses shoot missiles etc.
+
+=== Underwater, Atlantic
+
+
+=== Deep Sea
+
+
+=== Forest, Mystic Forest, Jungle Tribe, Temples
+- Weird shaman that casts spells and stops moving sometimes.
+- Can break concetration (bar)
+
+
+=== Rivers
+Long eel creatures
+
+
+=== Marble with Gold
+- Ballistic/Piercing shots bounce off
+- Magic can bounce off
+
+
+=== Vegetables & Fruits come to life!
+- Ents die but corpse regenerates units standing atop it
+- Petals flying everywhere. Decreases range of units
+
+=== Darkness
+- Fear themed monsters
+- Coward, comes in packs, runaways when horror/terrid destroyed
+
+=== Hell
+- Demons
+- Lava rising - need to use seeds and tune spawns to terrrain
+
+=== False Beings
+- Homunculi, Amorphous, Amalgamate
+
+
+=== SWAT team
+- Throws smoke bombs on entry
+- Throws flash (Can flash themselves)
+- Sniper assassins
+- Security guards and security dogs (noob enemies)
+- APCs, tanks
+- Guards run abit faster
+- VIP body guards
+
+
+=== Insectoids
+- Flies that just buzz around
+- Ants that only exist to collect things across lane to power up all creeps
+- Bug explodes into more bugs
+- Super dark rain
+
+
+
+=== Attic, basement
+complete darkness - only towers, fires, and revealio skills reveal some area
+- Enemies shrouded in darkness have a -50 to -90% penalty to range.
+- Rats scurrying to steal your core-gem health instead of chipping damage
+
+=== Haunted House
+As above, so below; Also plagued with darkness
+- Evasive ghosts, jump scares
+
+
+=== Evil Scientist
+- Things that mines for minerals to enhance all creeps
+- Hiding in bush somewhere preparing missiles to disable towers
+- Big machine protects a small guy that zooms forward to the end.
+- Enemy that will never face-check tower but hang around to cause annoyance.
+
+=== Flesh beasts
+- Flesh tunnels bury through multiple lanes. Hitting the tunnel opening pushes them back
+- As the flesh tunnels encroach every turn, they are more exposed to damage
+- A beast attached to the tunnels start to appear from the side, following the border of the tunnel openings
+- Tunnel openings release beasts, (instead from the start)
+
+
+=== Swamp, Graveyard, Mire, Construction Yard, Sewage
+
+=== Others
+Flowers to burst from high ground - can be covered by towers, attacks towers and heals units, ultimate - spawns units on boss round randomly
+Hands slamming down from the heavens, dealing damage, stealing towers
+Meteor shower, stone towers also get att/def buff.
+Units in the air can be hit by air attacks
+Rivers that can flow both ways - fish swim super fast in water but struggle to "travel on land" or swim up the river. Get damaged on "leave river to hit the floor"/waterfall
+
+
+--- Player powers
+- Boost a tower's ATT, ATT_SPD, RES, etc.
+- Boost a tower's RES, HP etc.
+- Boost a tower's CDR, MP_REGEN, MP etc.
+
+
+
+

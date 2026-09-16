@@ -1,0 +1,125 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &8265620555175830832
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8050993656024754922}
+  - component: {fileID: 2682846624011552504}
+  - component: {fileID: 8291766796282065226}
+  - component: {fileID: 5338568937992753366}
+  - component: {fileID: 7251543155952241387}
+  - component: {fileID: 206227183898817194}
+  - component: {fileID: 487099441208795645}
+  m_Layer: 0
+  m_Name: TestHarness
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8050993656024754922
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8265620555175830832}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2682846624011552504
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8265620555175830832}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ccf724d0bedd4157bb3b18f743ddb45, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TowerDefence.Manager.TickManager
+--- !u!114 &8291766796282065226
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8265620555175830832}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f6026c5161964b209a005d38f202526, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TowerDefence.Entity.EntityManager
+  monsterObjects: []
+  towerObjects: []
+--- !u!114 &5338568937992753366
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8265620555175830832}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5b00b1bfa3ca48a2a675c049061eb27, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TowerDefence.Manager.GameManager
+--- !u!114 &7251543155952241387
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8265620555175830832}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df08b3e4944cc4440b99fdfe32358fd1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TowerDefence.Stages.EntityWaveManager
+--- !u!114 &206227183898817194
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8265620555175830832}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f3c303f7b701041e59b30a9c4ab3ba97, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TowerDefence.Manager.HudDisplay
+--- !u!114 &487099441208795645
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8265620555175830832}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c788c83924f0245d8acd9aa25ff6878f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TowerDefence.Manager.MvpDemoSpawner
+  TowerPrefab: {fileID: 259279537488771170, guid: dc707e0d600e24b7fb8a8c922654a017, type: 3}
+  TowerPlan: {fileID: 11400000, guid: bb8fcc39c61954c60904f8a742ee7d7e, type: 2}
+  TowerPosition: {x: 0, y: 0, z: 0}
+  MonsterPrefab: {fileID: 5407871504841210275, guid: 555840fccb36449cf93f619cc2971a67, type: 3}
+  MonsterPlan: {fileID: 11400000, guid: 55543191543eb4d7ea4bb9f38ea3168a, type: 2}
+  MonsterPosition: {x: 5, y: 0, z: 0}
+  MapPrefab: {fileID: 7143889524062334904, guid: e87c930bfb42e46a4b043f8308746d43, type: 3}
+  MapPlan: {fileID: 11400000, guid: e290d8713b5b048e48d339c90f315ac5, type: 2}
+  RandomMapSize: {x: 13, y: 11}
+  AvailableTowers:
+  - {fileID: 11400000, guid: bb8fcc39c61954c60904f8a742ee7d7e, type: 2}
+  - {fileID: 11400000, guid: a2a04d5e204c44d1c97195908779ded8, type: 2}

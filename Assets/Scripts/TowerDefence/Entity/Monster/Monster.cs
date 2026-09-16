@@ -12,6 +12,11 @@ namespace TowerDefence.Entity.Monster
 		MonsterPlan _plan;
 		public new IEntityPlan Plan => _plan;
 
+		public Monster(MonsterPlan plan) : base(plan)
+		{
+			_plan = plan;
+		}
+
 		#endregion Information
 
 		#region Game

@@ -9,6 +9,7 @@ namespace TowerDefence.Entity.Skills
 	/// <summary>
 	/// Trigger is just a data object, as part of an Effect. ActionHandler manages the logic of subscribing actions.
 	/// </summary>
+	[System.Serializable]
 	public class Trigger : ITrigger
 	{
 		// Implementation of trigger logic
@@ -19,14 +20,6 @@ namespace TowerDefence.Entity.Skills
 		{
 			Type = type;
 			Parameter = parameter;
-		}
-
-		public static bool IsStatTrigger(TriggerType type)
-		{
-			return type is TriggerType.OnValueChanged or TriggerType.OnValueDecreased or TriggerType.OnValueIncreased
-				or TriggerType.OnMaxValueChanged or TriggerType.OnCurrentValueDecreased or TriggerType.OnCurrentValueIncreased
-				or TriggerType.OnStatBonusAdded or TriggerType.OnStatNerfAdded
-				or TriggerType.OnRegenerate or TriggerType.OnRegenValueChanged or TriggerType.OnRegenRateChanged;
 		}
 
 		public static bool IsGameTrigger(TriggerType type)
@@ -57,6 +50,10 @@ namespace TowerDefence.Entity.Skills
 		OnAllyStatus,
 		OnAllySpendResources,
 		//
+		OnSkillLearned,
+		OnSkillUnlearned,
+		OnSkillActivate, // A skill's effect actually fired (incl. periodic ticks) - see WrappedAction
+		//
 		OnEnteredRange,
 		OnExitRange,
 		OnEnteredAttackRange,
@@ -75,9 +72,11 @@ namespace TowerDefence.Entity.Skills
 		OnVamp,
 		OnBloodied,
 		OnDying,
+		OnRage,
 		OnRange,
 		OnManaDry,
 		OnRest,
+		OnEntityStateChange,
 		//
 		OnPeriodic,
 		//

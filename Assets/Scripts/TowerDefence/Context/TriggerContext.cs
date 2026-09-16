@@ -6,6 +6,7 @@ using TowerDefence.Entity.Skills;
 using TowerDefence.Entity.Skills.Buffs;
 using TowerDefence.Entity.Token;
 using TowerDefence.Stats;
+using UnityEngine;
 using Util.Maths;
 
 namespace TowerDefence.Context
@@ -37,6 +38,14 @@ namespace TowerDefence.Context
 		IDamage Damage { get; }
 		IStatMod Mod { get; }
 
+		// Spatial - only populated by whatever raises a spatially-relevant trigger (e.g.
+		// ProjectileActionHandler launching a projectile). Entity itself has no world position of its
+		// own (see EntityController - the Unity-side wrapper has one, the plain-C# Entity doesn't), so
+		// this is the "just add the field, only read it where it matters" escape hatch rather than
+		// plumbing a real position through Entity. Defaults to Vector3.zero, same as any other unset
+		// field here.
+		Vector3 SourcePosition { get; }
+		Vector3 TargetPosition { get; }
 	}
 
 	public class TriggerContext : ITriggerContext
@@ -80,6 +89,10 @@ namespace TowerDefence.Context
 		public IDamage Damage { get; set; }
 
 		public IStatMod Mod { get; set; }
+
+		// Spatial
+		public Vector3 SourcePosition { get; set; }
+		public Vector3 TargetPosition { get; set; }
 	}
 }
 

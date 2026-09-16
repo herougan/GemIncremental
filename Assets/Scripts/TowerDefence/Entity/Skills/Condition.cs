@@ -1,3 +1,4 @@
+using System;
 using TowerDefence.Entity.Behaviour;
 using TowerDefence.Entity.Items;
 using TowerDefence.Entity.Resources;
@@ -9,11 +10,23 @@ using Util.Maths;
 namespace TowerDefence.Entity.Skills
 {
 	#region Conditions
+	// Pure data - Condition/StatCondition/etc. don't evaluate themselves. Util.Game.EntityUtil.Check
+	// (a static IEntity/ICondition -> bool dispatch, pre-existing in this codebase) is the one place
+	// conditions actually get evaluated - EffectController.ApplyAction and Skill.ApplyPassive
+	// both route through it, so there's exactly one evaluation mechanism, not two.
 	public interface ICondition
 	{
 		public ConditionType ConditionType { get; }
 	}
 
+	// [Serializable] on every class in this file (base and every concrete subclass) is required, not
+	// decorative - Effect.Conditions/TargetConditions are `[SerializeReference] List<ICondition>`, and
+	// Unity's SerializeReference checks the CONCRETE runtime type (obj.GetType()), not an inherited
+	// attribute from the base class. A subclass missing its own [Serializable] silently fails to
+	// round-trip through a domain reload/asset reimport - exactly the bug that made ProjectileAction's
+	// Plan field vanish after a reload (see ProjectileAction.cs's own doc comment) - so every one of
+	// these gets it too, since Condition has the identical shape.
+	[Serializable]
 	public abstract class Condition : ICondition
 	{
 		// Implementation of condition logic
@@ -42,6 +55,7 @@ namespace TowerDefence.Entity.Skills
 
 
 	// ===== Specific condition implementations =====
+	[Serializable]
 	public class StatCondition : Condition
 	{
 		public StatType StatType { get; private set; }
@@ -58,6 +72,7 @@ namespace TowerDefence.Entity.Skills
 		}
 	}
 
+	[Serializable]
 	public class RaceCondition : Condition
 	{
 		public RaceCondition(Monster.MonsterType type) : base(ConditionType.Race)
@@ -71,6 +86,7 @@ namespace TowerDefence.Entity.Skills
 		}
 	}
 
+	[Serializable]
 	public class KinematicsCondition : Condition
 	{
 		public KinematicsType Param { get; private set; }
@@ -85,6 +101,7 @@ namespace TowerDefence.Entity.Skills
 		}
 	}
 
+	[Serializable]
 	public class MileageCondition : Condition
 	{
 		public MileageType MileageType { get; private set; }
@@ -100,6 +117,7 @@ namespace TowerDefence.Entity.Skills
 		}
 	}
 
+	[Serializable]
 	public class ResourceCondition : Condition
 	{
 		public ResourceType ResourceType { get; private set; }
@@ -115,6 +133,7 @@ namespace TowerDefence.Entity.Skills
 		}
 	}
 
+	[Serializable]
 	public class TokenCondition : Condition
 	{
 		public TokenType TokenType { get; private set; }
@@ -130,6 +149,7 @@ namespace TowerDefence.Entity.Skills
 		}
 	}
 
+	[Serializable]
 	public class EntityInventoryCondition : Condition
 	{
 		public ItemType ItemType { get; private set; }
@@ -159,6 +179,7 @@ namespace TowerDefence.Entity.Skills
 		}
 	}
 
+	[Serializable]
 	public class EntityBehaviourCondition : Condition
 	{
 		public EntityBehaviourType BehaviourType { get; private set; }
@@ -170,6 +191,7 @@ namespace TowerDefence.Entity.Skills
 		}
 	}
 
+	[Serializable]
 	public class StatusCondition : Condition
 	{
 		public StatusType StatusType { get; private set; }
@@ -181,6 +203,24 @@ namespace TowerDefence.Entity.Skills
 		}
 	}
 
+	/// <summary>Generic "+1"-style per-Entity counter (ConditionType.Counter) - see Entity.GetCounter/SetCounter and CounterType for what's actually tracked. Distinct from Mileage (which only ever accumulates, per-type, never author-set) - a Counter can be set to an arbitrary value directly, e.g. SpawnActionHandler stamping CounterType.SplitDepth onto a freshly spawned Monster.</summary>
+	[Serializable]
+	public class CounterCondition : Condition
+	{
+		public CounterType CounterType { get; private set; }
+		public int RequiredCount { get; private set; }
+		public MathOperation Comparative { get; private set; }
+		public override ConditionType ConditionType => ConditionType.Counter;
+
+		public CounterCondition(CounterType counterType, int requiredCount, MathOperation comparative) : base(ConditionType.Counter)
+		{
+			CounterType = counterType;
+			RequiredCount = requiredCount;
+			Comparative = comparative;
+		}
+	}
+
+	[Serializable]
 	public class TagCondition : Condition
 	{
 		public Tag Tag { get; private set; }
@@ -192,6 +232,7 @@ namespace TowerDefence.Entity.Skills
 		}
 	}
 
+	[Serializable]
 	public class MetaCondition : Condition
 	{
 		public string Text { get; private set; }
@@ -210,7 +251,9 @@ namespace TowerDefence.Entity.Skills
 	#region Enums
 	public enum CounterType
 	{
-
+		// How many times a "splits into mini versions of itself on death" chain has already produced
+		// this Entity - see SpawnAction.SpawnSelf/SpawnActionHandler. 0 for anything not spawned that way.
+		SplitDepth,
 	}
 	public enum EntityInventoryType
 	{

@@ -27,22 +27,30 @@ namespace TowerDefence.Library
 	{
 		#region Data
 
-		public static Dictionary<StatusType, BuffPlan> StatusPlans = new Dictionary<StatusType, BuffPlan>()
+		// Was an eagerly-initialised dictionary literal of Resources.Load calls - Resources.Load returns
+		// null (not an exception) for a path with no asset, and no Assets/Resources/Status/ folder has
+		// ever been authored, so every single entry silently evaluated to null. Buff's own constructor
+		// immediately does `Duration = plan.Duration`, so constructing ANY StatusBuff crashed with an
+		// NRE that pointed at Buff.cs, nowhere near the actual missing-asset cause. GetStatusPlan below
+		// replaces the dictionary literal: still prefers a real Resources/Status/<Type> asset if one
+		// exists, but falls back to an in-memory placeholder BuffPlan (logged once) instead of null, so
+		// the Status system is exercisable today and upgrades to real authored content later for free.
+		static readonly Dictionary<StatusType, BuffPlan> statusPlanCache = new();
+
+		public static BuffPlan GetStatusPlan(StatusType type)
+		{
+			if (statusPlanCache.TryGetValue(type, out BuffPlan cached)) return cached;
+
+			BuffPlan plan = Resources.Load<BuffPlan>($"Status/{type}");
+			if (plan == null)
 			{
-				{ StatusType.Stun, Resources.Load<BuffPlan>("Status/Stun") },
-				{ StatusType.Poison, Resources.Load<BuffPlan>("Status/Poison") },
-				{ StatusType.Freeze, Resources.Load<BuffPlan>("Status/Freeze") },
-				{ StatusType.Slow, Resources.Load<BuffPlan>("Status/Slow") },
-				{ StatusType.Blind, Resources.Load<BuffPlan>("Status/Blind") },
-				{ StatusType.Knockback, Resources.Load<BuffPlan>("Status/Knockback") },
-				{ StatusType.Burn, Resources.Load<BuffPlan>("Status/Burn") },
-				{ StatusType.Paralyse, Resources.Load<BuffPlan>("Status/Paralyse") },
-				{ StatusType.Confuse, Resources.Load<BuffPlan>("Status/Confuse") },
-				{ StatusType.Silence, Resources.Load<BuffPlan>("Status/Silence") },
-				{ StatusType.Weak, Resources.Load<BuffPlan>("Status/Weak") },
-				{ StatusType.Charm, Resources.Load<BuffPlan>("Status/Charm") },
-				{ StatusType.Curse, Resources.Load<BuffPlan>("Status/Curse") },
-			};
+				LogManager.Instance.LogWarning($"SkillsLib: no BuffPlan asset at Resources/Status/{type} - using an empty in-memory placeholder. Add one there to author real Status content.");
+				plan = ScriptableObject.CreateInstance<BuffPlan>();
+				plan.Name = type.ToString();
+			}
+			statusPlanCache[type] = plan;
+			return plan;
+		}
 
 		public static Dictionary<StatusType, BuffStackType> StatusStackTypes = new Dictionary<StatusType, BuffStackType>()
 			{
@@ -58,14 +66,24 @@ namespace TowerDefence.Library
 				{ StatusType.Silence, DelibilitatingTypeStacking},
 				{ StatusType.Weak, DelibilitatingTypeStacking},
 				{ StatusType.Charm, DelibilitatingTypeStacking},
-				{ StatusType.Curse, DelibilitatingTypeStacking},
+				// Curse: was Debilitating (never got its own slot) - Disease fits its "compounds the
+				// longer it's left untreated" flavour better: reapplying doesn't extend Duration (a
+				// Curse doesn't linger longer just because it was cast twice), but Rank climbs each time
+				// and Value takes whichever application was strongest - a worsening affliction, not a
+				// simple refresh. Was the one StatusType missing from this table (DiseaseTypeStacking
+				// existed but nothing referenced it) - assigned per the design discussion's "your whims".
+				{ StatusType.Curse, DiseaseTypeStacking},
 			};
 
-		// reference BuffStackTypes
-		private static BuffStackType FireTypeStacking = new BuffStackType(MathOperation.Max, MathOperation.Max, MathOperation.Add);
-		private static BuffStackType PoisonTypeStacking = new BuffStackType(MathOperation.Add, MathOperation.Max, MathOperation.Max);
-		private static BuffStackType DelibilitatingTypeStacking = new BuffStackType(MathOperation.Max, MathOperation.Max, MathOperation.Max);
-		private static BuffStackType DiseaseTypeStacking = new BuffStackType(MathOperation.Nothing, MathOperation.Add, MathOperation.Max);
+		// Named stacking archetypes - "different types of stacking," each a (Time, Rank, Value)
+		// MathOperation triple (see BuffStackType.StackValue, Util.Maths.MathsLib.Operate) rather than
+		// one hardcoded stacking rule for every Status. Assign a StatusType to whichever reads truest to
+		// how that affliction should behave on reapplication - there's no single correct scheme, this is
+		// a starting point, not a final balance pass.
+		private static BuffStackType FireTypeStacking = new BuffStackType(MathOperation.Max, MathOperation.Max, MathOperation.Add); // Duration = longest application; Value keeps adding (intensity climbs), e.g. Burn.
+		private static BuffStackType PoisonTypeStacking = new BuffStackType(MathOperation.Add, MathOperation.Max, MathOperation.Max); // Duration extends with each application (lingers longer); Value takes the strongest single dose.
+		private static BuffStackType DelibilitatingTypeStacking = new BuffStackType(MathOperation.Max, MathOperation.Max, MathOperation.Max); // CC-adjacent effects (Blind/Silence/Charm/...) - reapplying just takes the strongest/longest, no compounding.
+		private static BuffStackType DiseaseTypeStacking = new BuffStackType(MathOperation.Nothing, MathOperation.Add, MathOperation.Max); // Duration untouched by reapplication; Rank keeps climbing - a worsening condition, not a refreshed timer.
 
 		#endregion Data
 
@@ -240,7 +258,7 @@ namespace TowerDefence.Library
 			switch (condition)
 			{
 				case StatCondition statCond:
-					return entity.GetStat(statCond.StatType).Value;
+					return entity.GetStat(statCond.StatType);
 				case KinematicsCondition kinCond:
 					return GetKinematics(entity, kinCond);
 				case MileageCondition mileageCond:

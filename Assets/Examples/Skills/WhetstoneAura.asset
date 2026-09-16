@@ -1,0 +1,72 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d457985547ef74223ac3220e57f7b20a, type: 3}
+  m_Name: WhetstoneAura
+  m_EditorClassIdentifier: Assembly-CSharp::TowerDefence.Entity.Skills.Buffs.BuffPlan
+  <Name>k__BackingField: Whetstone Aura
+  <Description>k__BackingField:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  <Level>k__BackingField: 0
+  <MaxLevel>k__BackingField: 0
+  <Cooldown>k__BackingField: 0
+  <Range>k__BackingField: 0
+  <Damage>k__BackingField:
+    Mantissa: 0
+    Exponent: 0
+    Precision: 0
+  <Radius>k__BackingField: 0
+  <ChannelingTime>k__BackingField: 0
+  <IsPositive>k__BackingField: 1
+  <ForMonster>k__BackingField: 0
+  <ForTower>k__BackingField: 1
+  <Cost>k__BackingField: 0
+  <StatCosts>k__BackingField: []
+  <ResourceCosts>k__BackingField: []
+  <Effects>k__BackingField:
+  - rid: 5846612639332171871
+  <Tags>k__BackingField: 
+  Predecessor: {fileID: 0}
+  Successor: {fileID: 0}
+  references:
+    version: 2
+    RefIds:
+    - rid: 5846612639332171871
+      type: {class: Effect, ns: TowerDefence.Entity.Skills.Effects, asm: Assembly-CSharp}
+      data:
+        <Triggers>k__BackingField:
+        - rid: 5846612639332171872
+        <Conditions>k__BackingField: []
+        <TargetConditions>k__BackingField: []
+        <Actions>k__BackingField:
+        - rid: 5846612639332171873
+    - rid: 5846612639332171872
+      type: {class: Trigger, ns: TowerDefence.Entity.Skills, asm: Assembly-CSharp}
+      data: 
+    - rid: 5846612639332171873
+      type: {class: Action, ns: TowerDefence.Entity.Skills.Effects, asm: Assembly-CSharp}
+      data:
+        Type: 0
+        Value:
+          Mantissa: 1
+          Exponent: 0
+          Precision: 10
+        Tags: 
+        Element: 0
+        Stat: 2
+        BuffToApply: {fileID: 0}

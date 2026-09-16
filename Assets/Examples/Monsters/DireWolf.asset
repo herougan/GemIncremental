@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3e729a4e4a834415d91edab90b1e39f4, type: 3}
+  m_Name: DireWolf
+  m_EditorClassIdentifier: Assembly-CSharp::TowerDefence.Entity.Monster.MonsterPlan
+  <Name>k__BackingField: DireWolf
+  <IsBoss>k__BackingField: 0
+  <StartingHealth>k__BackingField:
+    Mantissa: 1.0000000000000002
+    Exponent: 1.6989700043360187
+    Precision: 10
+  <StatEntries>k__BackingField:
+  - Type: 2
+    Value: 10
+  - Type: 4
+    Value: 5
+  - Type: 40
+    Value: 6
+  - Type: 13
+    Value: 10
+  - Type: 48
+    Value: 15
+  <StatusEntries>k__BackingField: []
+  <ElementEntries>k__BackingField: []
+  <InitSkills>k__BackingField:
+  - {fileID: 11400000, guid: 45ac87588ae174856ad9cd10299b03a1, type: 2}
+  <InitBuffs>k__BackingField: []
+  <Type>k__BackingField: 20
+  <Race>k__BackingField: 1
+  <Prefab>k__BackingField: {fileID: 5407871504841210275, guid: 555840fccb36449cf93f619cc2971a67, type: 3}
+  SpawnSound: {fileID: 0}
+  AttackSound: {fileID: 0}
+  RoarSounds: {fileID: 0}
+  DeathSound: {fileID: 0}

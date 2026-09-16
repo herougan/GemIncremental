@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Util.Maths;
 using TowerDefence.Entity.Skills;
@@ -7,6 +8,15 @@ using TowerDefence.Entity.Skills.Effects;
 using Util.Events;
 using TowerDefence.Entity.Skills.ActionHandler;
 using TowerDefence.Context;
+using TowerDefence.Stats;
+using TowerDefence.Entity.Monster; // for MonsterPlan
+using Player; // for IEnhancementSystem - safe as a plain using here (no bare `Player` identifier referenced in this file, only the type)
+// A separate, differently-named alias for the Monster class itself: EntityManager lives in the
+// parent namespace TowerDefence.Entity, which also has a *nested* namespace called Monster;
+// enclosing-namespace lookup finds that nested namespace before any using-directive (even a
+// `using Monster = ...` alias) gets considered, so an unqualified `Monster` here always resolves to
+// the namespace (CS0118) no matter how it's imported - the alias needs its own name to sidestep that.
+using MonsterEntity = TowerDefence.Entity.Monster.Monster;
 
 
 namespace TowerDefence.Entity
@@ -55,10 +65,179 @@ namespace TowerDefence.Entity
 
 		#endregion Preamble
 
+		#region Position Registry
+
+		// The one place a plain-C# IEntity gets linked to a real world Transform - Entity itself
+		// deliberately carries no position (see CLAUDE.md's Entity/EntityController split). Populated by
+		// EntityController.Initiate/OnDestroy; read by anything that needs a live position for an
+		// IEntity it's holding, e.g. ProjectileActionHandler wiring up a homing shot's target.
+		static readonly Dictionary<IEntity, Transform> entityTransforms = new();
+
+		public static void RegisterTransform(IEntity entity, Transform transform) => entityTransforms[entity] = transform;
+		public static void UnregisterTransform(IEntity entity) => entityTransforms.Remove(entity);
+		public static Transform GetTransform(IEntity entity) =>
+			entityTransforms.TryGetValue(entity, out var t) ? t : null;
+
+		/// <summary>Every currently-registered Entity (Monster or Tower) - a snapshot List, not a live view, so TickManager (or anything else) can safely iterate it even if ticking one Entity causes another to die and unregister mid-loop.</summary>
+		public static List<IEntity> GetAllEntities() => entityTransforms.Keys.ToList();
+
+		/// <summary>
+		/// Every registered Entity within range of position - O(every registered Entity), not real
+		/// spatial partitioning (a quadtree/grid) - fine while entity counts are small, worth revisiting
+		/// once TowerAttackController is actually scanning this every frame for every Tower against
+		/// every Monster on screen.
+		/// </summary>
+		public static List<IEntity> GetEntitiesInRange(Vector3 position, float range)
+		{
+			List<IEntity> result = new();
+			foreach (var kv in entityTransforms)
+			{
+				if (kv.Value == null) continue;
+				if (Vector3.Distance(kv.Value.position, position) <= range) result.Add(kv.Key);
+			}
+			return result;
+		}
+
+		#endregion Position Registry
+
+		#region Enhancement Systems
+
+		// "EntityManager would have a way to collect the totality of all ApplyModTos, and cache the
+		// value... upon some change, the systems become dirty, and EntityManager detects this and
+		// recalculates" - per the design discussion. Every registered IEnhancementSystem's GetMods() is
+		// flattened into one cached List<IStatMod> here, refreshed only when MarkEnhancementsDirty has
+		// been called since the last read - not per system, per spawn. A system mutating its own data
+		// (Foundry.AddPermaMod today) is responsible for calling MarkEnhancementsDirty itself; there's no
+		// way for EntityManager to detect that on its own without every system exposing a change event,
+		// which felt like more machinery than this needs yet - simplest thing that could plausibly work.
+		static readonly List<IEnhancementSystem> enhancementSystems = new();
+		static List<IStatMod> cachedEnhancementMods = new();
+		static bool enhancementsDirty = true; // starts dirty - nothing's cached yet
+
+		public static void RegisterEnhancementSystem(IEnhancementSystem system)
+		{
+			enhancementSystems.Add(system);
+			MarkEnhancementsDirty();
+		}
+
+		public static void MarkEnhancementsDirty() => enhancementsDirty = true;
+
+		/// <summary>
+		/// Registers every currently-cached enhancement mod onto entity - call once per spawn (see
+		/// EntityWaveManager.Update, right after EntityManager.SpawnMonster). Recomputes the cache first
+		/// if dirty; otherwise this is just replaying an already-flattened list, not re-querying every
+		/// system.
+		/// </summary>
+		public static void ApplyEnhancements(IEntity entity)
+		{
+			if (enhancementsDirty)
+			{
+				cachedEnhancementMods = enhancementSystems.SelectMany(s => s.GetMods()).ToList();
+				enhancementsDirty = false;
+			}
+			foreach (IStatMod mod in cachedEnhancementMods)
+			{
+				entity.RegisterStatMod(mod);
+			}
+		}
+
+		#endregion Enhancement Systems
+
 		#region Wave Spawn
 
 		public List<GameObject> monsterObjects = new List<GameObject>();
 		public List<GameObject> towerObjects = new List<GameObject>();
+
+		/// <summary>
+		/// Builds a Monster from a Plan and runs it through the same lifecycle any spawned entity needs:
+		/// fresh per-instance Stat/Element/Resource state, InitBuffs applied, InitSkills learned (each
+		/// one's Triggers wired into WrappedActions on this Monster's events - see Skill.RegisterCallbacks),
+		/// then OnSpawn fires. Pure C# - no GameObject/prefab/scene required - so this is safe to call
+		/// from an Editor script or a plain test, not just at runtime.
+		///
+		/// Deliberately just `new Monster(plan); monster.Spawn();`, not RegisterEntityCallbacks() below:
+		/// RegisterEntityCallbacks -> RegisterInitSkills iterates entity.Plan.InitSkills (a
+		/// List&lt;SkillPlan&gt;) as if it already held ISkill instances, which throws InvalidCastException
+		/// the moment a Plan actually has a skill on it - SkillPlan doesn't implement ISkill, only Skill
+		/// does. That path is currently dead/broken and needs its own fix (or removal now that
+		/// Entity.Spawn/Skill.RegisterCallbacks cover the same ground correctly) - tracked separately,
+		/// not fixed here to keep this change scoped to spawning.
+		/// </summary>
+		public static MonsterEntity SpawnMonster(MonsterPlan plan)
+		{
+			MonsterEntity monster = new MonsterEntity(plan);
+			monster.Spawn();
+			return monster;
+		}
+
+		/// <summary>
+		/// Same as SpawnMonster(plan), but scales the result to the given WorldProgress afterward -
+		/// what EntityWaveManager calls so monsters get tougher as Stage/Round climb. The curve below
+		/// (a flat % per Stage/Round on Health/Attack/Defence) is a placeholder purely to prove
+		/// WorldProgress actually reaches spawn time - not a tuned difficulty curve.
+		/// </summary>
+		public static MonsterEntity SpawnMonster(MonsterPlan plan, TowerDefence.Stages.WorldProgress world)
+		{
+			MonsterEntity monster = SpawnMonster(plan);
+			ScaleToWorld(monster, world);
+			return monster;
+		}
+
+		/// <summary>
+		/// Permanent, one-time scaling from total progression - "this stays," unlike a Skill/Buff's own
+		/// Passives (temporary, applied/unapplied as they're granted/removed - see Skill.ApplyPassive).
+		/// Scales both Base and Value by the same multiplier: Base, so anything computing a *fresh*
+		/// Passive contribution later (a skill granted after this point) starts from the scaled number;
+		/// Value, so whatever's already applied (InitSkills' Passives, folded in during Spawn() before
+		/// this runs) scales proportionally along with everything else, rather than needing to be
+		/// unapplied and reapplied to pick up the new Base.
+		/// </summary>
+		static void ScaleToWorld(MonsterEntity monster, TowerDefence.Stages.WorldProgress world)
+		{
+			if (world == null) return;
+
+			ddouble multiplier = ComputeWaveMultiplier(world);
+			ScaleStat(monster, StatType.Health, multiplier);
+			ScaleStat(monster, StatType.Attack, multiplier);
+			ScaleStat(monster, StatType.Defence, multiplier);
+			// Gold dropped on death (see GameManager.HandleEntityEvent) scales the same way its combat
+			// stats do - a Monster worth more to kill later is also worth more to have killed.
+			ScaleStat(monster, StatType.Reward, multiplier);
+		}
+
+		/// <summary>Permanently multiplies both Base and Value of one stat - see ScaleToWorld's own doc comment for why both. Internal, not private: reused by SpawnActionHandler for "each split generation is weaker" scaling (ActionType.Spawn/SpawnAction.ScalePerDepth) - same operation, different caller, not worth two copies.</summary>
+		internal static void ScaleStat(MonsterEntity monster, StatType type, ddouble multiplier)
+		{
+			monster.StatBlock.SetBase(type, monster.StatBlock.GetBase(type) * multiplier);
+			monster.StatBlock.SetStat(type, monster.StatBlock.GetStat(type) * multiplier);
+		}
+
+		/// <summary>
+		/// exp(1 + totalWaveNumber/100) - a small exponent by design (per the design discussion), not a
+		/// tuned curve. totalWaveNumber = World*(BiomeCount*20^3) + Biome*20^3 + Stage*20^2 + Round*20 +
+		/// Wave, using WorldProgress's own 0-indexed fields directly (the design discussion's own worked
+		/// example used 1-indexed human-facing numbers - "biome 2" etc. - hence the "-1"s there; this only
+		/// needs the same shape, not the same indexing, since WorldProgress already starts every field at
+		/// 0). The World term is an outer multiplier on the whole Biome cycle, so looping back to World 1
+		/// (a "New Game+" pass) is a strict difficulty step up from finishing every Biome at World 0, even
+		/// though ENEMIETRIX itself doesn't key on World - see WorldProgress's own doc comment.
+		/// Uses MathsLib.Exp, not System.Math.Exp - the latter overflows to double.PositiveInfinity once
+		/// the exponent passes ~709 (totalWaveNumber ~70,800 with this formula), which stats should never
+		/// hit since everything stat-related is ddouble specifically to avoid that ceiling.
+		/// </summary>
+		static ddouble ComputeWaveMultiplier(TowerDefence.Stages.WorldProgress world)
+		{
+			long biomeCount = System.Enum.GetValues(typeof(TowerDefence.Stages.StageType)).Length;
+			long totalWaveNumber =
+				(long)world.World * biomeCount * 20L * 20L * 20L +
+				(long)world.Biome * 20L * 20L * 20L +
+				(long)world.Stage * 20L * 20L +
+				(long)world.Round * 20L +
+				world.Wave;
+
+			double exponent = 1.0 + totalWaveNumber / 100.0;
+			return MathsLib.Exp(exponent);
+		}
 
 		public void KillAll()
 		{
@@ -284,49 +463,35 @@ namespace TowerDefence.Entity
 
 		static void RegisterTrigger(IEntity entity, ITrigger trigger, IEffect effect, ISkill skill)
 		{
-			// Get event
-			Action<TriggerContext> triggeringEvent;
 			WrappedAction wrapped;
 			if (trigger.Type == TriggerType.OnPeriodic)
 			{
-				CountdownTimer timer = new CountdownTimer(trigger.Parameter);
+				// One dedicated timer per periodic Effect - see WrappedAction for why this can't share
+				// a dictionary slot the way every other trigger type does.
+				CountdownTimer timer = new CountdownTimer(trigger.Parameter, true);
 				entity.AddTimer(timer);
-				// CountdownTimer timer = entity.AddTimer(trigger.Parameter, true, (ctx) => EffectController.ApplyAction(ctx, entity, effect), skill);
-				wrapped = new WrappedAction(timer.OnRing, ctx => EffectController.ApplyAction(ctx, entity, effect), skill);
-				entity.WrappedActions.Add(wrapped);
-				return;
-			}
-			else if (Trigger.IsStatTrigger(trigger.Type))
-			{
-				//
-				triggeringEvent = entity.GetEvent(trigger.Type);
-				wrapped = new WrappedAction(triggeringEvent, ctx => EffectController.ApplyAction(ctx, entity, effect), skill, trigger.Type);
-				entity.WrappedActions.Add(wrapped);
-				return;
+				wrapped = new WrappedAction(entity, timer, ctx => EffectController.ApplyAction(ctx, entity, effect), skill);
 			}
 			else if (Trigger.IsGameTrigger(trigger.Type))
 			{
-				// Game event
-				// triggeringEvent = GameManager.Instance.GetGameEvent(trigger.Type);
-				// wrapped = new WrappedAction(triggeringEvent, ctx => EffectController.ApplyAction(ctx, entity, effect), skill, trigger.Type);
+				// Game-level triggers (OnGameStart, OnWaveStart, ...) aren't an Entity event at all -
+				// routing these through GameManager's own event surface is still unbuilt.
+				return;
 			}
 			else
 			{
-				triggeringEvent = entity.GetEvent(trigger.Type);
-				wrapped = new WrappedAction(triggeringEvent, ctx => EffectController.ApplyAction(ctx, entity, effect), skill, trigger.Type);
-				entity.WrappedActions.Add(wrapped);
-				return;
+				wrapped = new WrappedAction(entity, trigger.Type, ctx => EffectController.ApplyAction(ctx, entity, effect), skill);
 			}
+			entity.WrappedActions.Add(wrapped);
 		}
 
 		static void DeregisterSkill(IEntity entity, ISkill skill)
 		{
-			foreach (WrappedAction wrapped in entity.WrappedActions)
+			// ToList() - DeregisterWrappedAction removes from entity.WrappedActions, so iterating that
+			// list directly here would throw (collection modified during enumeration).
+			foreach (WrappedAction wrapped in entity.WrappedActions.Where(w => w.Ref == skill).ToList())
 			{
-				if (wrapped.Ref == skill)
-				{
-					DeregisterWrappedAction(entity, wrapped);
-				}
+				DeregisterWrappedAction(entity, wrapped);
 			}
 		}
 
@@ -337,6 +502,43 @@ namespace TowerDefence.Entity
 		}
 
 		#endregion Events
+
+		#region Event Bookkeeping
+
+		// EntityManager no longer *is* the bus - see Util.Events.EntityEventBus, which Entity.RaiseEvent
+		// publishes to directly now. This is just one more subscriber to it, opted in via the static
+		// constructor below (so it's listening the moment anything touches EntityManager, without
+		// needing a live Instance/scene) purely to keep its own "how many of TriggerType X have fired,
+		// what were the last few" bookkeeping - a EntityManager-specific convenience, not something the
+		// bus itself needs to know about or provide for free to every subscriber.
+		static EntityManager()
+		{
+			Util.Events.EntityEventBus.OnAnyEvent += RecordEvent;
+		}
+
+		const int RECENT_EVENT_CAPACITY = 10;
+		static readonly Dictionary<TriggerType, Queue<TriggerContext>> recentEvents = new();
+		static readonly Dictionary<TriggerType, int> eventCounts = new();
+
+		static void RecordEvent(TriggerContext ctx)
+		{
+			if (!recentEvents.TryGetValue(ctx.TriggerType, out var queue))
+			{
+				queue = new Queue<TriggerContext>();
+				recentEvents[ctx.TriggerType] = queue;
+			}
+			queue.Enqueue(ctx);
+			if (queue.Count > RECENT_EVENT_CAPACITY) queue.Dequeue();
+
+			eventCounts[ctx.TriggerType] = eventCounts.GetValueOrDefault(ctx.TriggerType) + 1;
+		}
+
+		public static IEnumerable<TriggerContext> GetRecentEvents(TriggerType type) =>
+			recentEvents.TryGetValue(type, out var queue) ? queue : Array.Empty<TriggerContext>();
+
+		public static int GetEventCount(TriggerType type) => eventCounts.GetValueOrDefault(type);
+
+		#endregion Event Bookkeeping
 
 		// #region Game Space
 		// readonly GameObject monsterContainer;

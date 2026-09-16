@@ -11,32 +11,27 @@ namespace Util.Game
 	{
 		#region Spawning
 		/// <summary>
-		/// Concisely stores information on what enemies will be fought.
-		/// MonsterMatrix = Enemietrix[Biome][Stage]
-		/// 	// Recall, World, Biome, Stage, Round, Wave
-		/// 	Consists of a List of Chain Series - Randomly select one to be the round's chain series
-		/// 		A Chain Series is a List of Chain(s) - The n-th chain describes when and what will be spawned
-		/// 		It represents a different challenge each time.
-		/// 		Chain(Monster to be summoned, Quantity, Time offset (s), Time)
-		/// 		* Note * Round 0 always spawns ChainSeries 0, which is the easiest chain. The rest are not ranked in difficulty.
-		/// Stronger chains are usually higher in the "n" 
+		/// ENEMIETRIX[Biome][Stage][Round][Wave] = the SpawnChains for that exact wave - Biome/Stage/
+		/// Round/Wave is the full progression hierarchy (see WorldProgress): 20 Waves make a Round, 20
+		/// Rounds make a Stage, 20 Stages make a Biome (a fixed size per level, not enforced by the type
+		/// itself - EntityWaveManager.LoadFromMatrix bounds-checks against however many are actually
+		/// authored here rather than assuming exactly 20 everywhere).
+		/// STUB - empty for every Biome; no wave content authored yet.
 		/// </summary>
-		public static readonly Dictionary<StageType, List<SpawnChain>> ENEMIETRIX = new Dictionary<StageType, List<SpawnChain>>()
+		public static readonly Dictionary<StageType, List<BiomeStage>> ENEMIETRIX = new Dictionary<StageType, List<BiomeStage>>()
 		{
-			// Need to be a Monobehaviour
-
 		};
 
 		public static SpawnChain LoadWaveData(WaveData data)
 		{
-			return new SpawnChain();
-			// {
-			// 	monster = data.monster,
-			// 	period = data.period,
-			// 	quantity = data.quantity,
-			// 	offset = data.offset,
-			// 	tags = data.tags
-			// };
+			return new SpawnChain
+			{
+				monster = data.monster,
+				period = data.period,
+				quantity = data.quantity,
+				offset = data.offset,
+				tags = data.tags,
+			};
 		}
 
 		#endregion Spawning
@@ -91,5 +86,28 @@ namespace Util.Game
 		public int quantity;
 		public float offset;
 		public List<Tag> tags;
+	}
+
+	// ===== Biome > Stage > Round > Wave hierarchy - see ENEMIETRIX's own doc comment =====
+
+	/// <summary>A single wave - what actually gets passed to EntityWaveManager.SpawnWave.</summary>
+	[Serializable]
+	public class Wave
+	{
+		public List<SpawnChain> Chains = new();
+	}
+
+	/// <summary>A round: 20 waves, per the design ("20 waves makes up a round").</summary>
+	[Serializable]
+	public class WaveRound
+	{
+		public List<Wave> Waves = new();
+	}
+
+	/// <summary>A stage within a Biome: 20 rounds ("20 rounds makes up a stage").</summary>
+	[Serializable]
+	public class BiomeStage
+	{
+		public List<WaveRound> Rounds = new();
 	}
 }

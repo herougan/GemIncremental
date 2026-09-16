@@ -1,6 +1,15 @@
 namespace TowerDefence.Entity.Skills
 {
-	public class Kinematics
+	public interface IKinematics
+	{
+		public float Speed { get; }
+		public float Acceleration { get; }
+		public float Deceleration { get; }
+
+		public float Get(KinematicsType type);
+
+	}
+	public class Kinematics : IKinematics
 	{
 		public float Speed { get; private set; }
 		public float Acceleration { get; private set; }

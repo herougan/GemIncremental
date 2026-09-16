@@ -13,11 +13,5 @@ namespace TowerDefence.Context
 	{
 		public int MonsterCount { get; set; }
 		public List<SpawnChain> SpawnChains { get; set; }
-
-		// Float, ddouble
-		public void Resolve(string s)
-		{
-
-		}
 	}
 }
